@@ -5,6 +5,7 @@ import os
 import httpx
 
 API_BASE = "https://api.bolna.ai"
+FIRE_ATTEMPTS = 5
 log = logging.getLogger("asli.bolna")
 
 
@@ -47,7 +48,7 @@ class Bolna:
     async def fire_event(self, run_id: str, event: str, properties: dict | None = None) -> None:
         body = {"event": event, "properties": properties or {}}
         last = None
-        for attempt in range(3):
+        for attempt in range(FIRE_ATTEMPTS):
             try:
                 res = await self.client.post(f"/v1/call/{run_id}/events", json=body)
                 if res.status_code < 500:
@@ -57,5 +58,6 @@ class Bolna:
                 last = BolnaError(f"fire_event {event} {res.status_code}")
             except httpx.TransportError as exc:
                 last = exc
-            await asyncio.sleep(0.4 * (attempt + 1))
+            if attempt < FIRE_ATTEMPTS - 1:
+                await asyncio.sleep(min(0.5 * 2 ** attempt, 4.0))
         raise BolnaError(f"fire_event {event} failed after retries: {last}")

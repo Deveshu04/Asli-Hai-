@@ -8,6 +8,7 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,7 +26,9 @@ WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
 DRILL_WINDOW_S = 30 * 60
 UNREACHED = {"no-answer", "busy", "failed", "canceled", "error", "balance-low"}
-TERMINAL = UNREACHED | {"completed", "call-disconnected", "stopped"}
+CHECK_FINAL = UNREACHED | {"completed", "stopped"}
+PARENT_ENDED = CHECK_FINAL | {"call-disconnected"}
+MAYBE_SENT = (httpx.ReadTimeout, httpx.WriteTimeout)
 DRILL_EXPECTED = {1: CHILD_SAFE, 2: CHILD_SAFE, 3: "authority", 4: "authority"}
 AUTHORITY_MARK = "डिजिटल अरेस्ट नाम की कोई चीज़"
 PAID_MARK = "अभी तुरंत 1930 पर कॉल कीजिए"
@@ -59,6 +62,7 @@ async def lifespan(app: FastAPI):
     owned = rt.bolna is None
     if owned:
         rt.bolna = Bolna()
+    rearm_timers()
     yield
     for task in list(rt.tasks):
         task.cancel()
@@ -184,10 +188,25 @@ def record_drill(drill_id: int, outcome: str | None, seconds: float | None) -> N
     db.execute("UPDATE drills SET seconds_to_verdict = ?, verdict_correct = ? WHERE id = ?", seconds, correct, drill_id)
 
 
-async def verdict_timeout(session_id: str) -> None:
-    await asyncio.sleep(float(os.getenv("VERDICT_TIMEOUT_S", "75")))
+def verdict_timeout_s() -> float:
+    return float(os.getenv("VERDICT_TIMEOUT_S", "75"))
+
+
+async def verdict_timeout(session_id: str, delay: float) -> None:
+    await asyncio.sleep(delay)
     rt.timers.pop(session_id, None)
     await finish(session_id, NOT_CONFIRMED, {}, "timeout")
+
+
+def rearm_timers() -> None:
+    now = time.time()
+    pending = db.all_rows(
+        "SELECT id, verification_started_at FROM sessions WHERE verdict IS NULL AND verification_started_at > ?",
+        now - 10 * 60,
+    )
+    for row in pending:
+        delay = max(0.0, row["verification_started_at"] + verdict_timeout_s() - now)
+        rt.timers[row["id"]] = rt.spawn(verdict_timeout(row["id"], delay))
 
 
 async def dial(session_id: str, start: int) -> None:
@@ -213,6 +232,10 @@ async def dial(session_id: str, start: int) -> None:
         }
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], user_data)
+        except MAYBE_SENT:
+            # Bolna may already be ringing this contact; dialing the next would ring two phones at once.
+            log.error("check call timed out session=%s priority=%s; leaving it to the timer", session_id, contact["priority"])
+            return
         except Exception:
             log.exception("check call failed session=%s priority=%s", session_id, contact["priority"])
             continue
@@ -340,9 +363,10 @@ async def trigger(body: TriggerIn):
     user_data = {"session_id": session_id, "parent_name": family["parent_name"], "timezone": "Asia/Kolkata"}
     try:
         run_id = await rt.bolna.place_call(agent_id, family["parent_phone"], user_data)
-    except Exception:
+    except Exception as exc:
         log.exception("parent call failed session=%s", session_id)
-        db.execute("UPDATE sessions SET parent_ended_at = ? WHERE id = ?", time.time(), session_id)
+        if not isinstance(exc, MAYBE_SENT):
+            db.execute("UPDATE sessions SET parent_ended_at = ? WHERE id = ?", time.time(), session_id)
         raise HTTPException(502, "Could not place the call")
     db.execute("UPDATE sessions SET parent_run_id = ? WHERE id = ?", run_id, session_id)
     log.info("session started id=%s stack=%s drill=%s run=%s", session_id, stack, drill_id, run_id)
@@ -368,7 +392,7 @@ async def start_verification(request: Request):
         log.info("start_verification repeat ignored session=%s", session["id"])
         return {"calling": current["name"] if current else calling}
 
-    rt.timers[session["id"]] = rt.spawn(verdict_timeout(session["id"]))
+    rt.timers[session["id"]] = rt.spawn(verdict_timeout(session["id"], verdict_timeout_s()))
     rt.spawn(dial(session["id"], 0))
     return {"calling": calling}
 
@@ -397,9 +421,10 @@ async def bolna_webhook(request: Request):
         log.exception("get_execution failed run=%s", run_id)
         return {"ok": False}
     status = (clean(data.get("status")) or "").lower()
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
     if session["check_run_id"] == run_id:
         await on_check_status(session, run_id, status, data)
-    elif status in TERMINAL:
+    elif session["parent_run_id"] == run_id and status in PARENT_ENDED:
         await on_parent_ended(session, data)
     return {"ok": True}
 
@@ -407,12 +432,12 @@ async def bolna_webhook(request: Request):
 def not_answered(status: str, data: dict) -> bool:
     if status in UNREACHED or data.get("answered_by_voice_mail"):
         return True
-    return status in {"completed", "call-disconnected"} and not data.get("conversation_duration")
+    return status == "completed" and not data.get("conversation_duration")
 
 
 async def on_check_status(session: dict, run_id: str, status: str, data: dict) -> None:
     unreached = not_answered(status, data)
-    if session["verdict"] or not (unreached or status in TERMINAL):
+    if session["verdict"] or not (unreached or status in CHECK_FINAL):
         return
     # Bolna repeats status webhooks; clearing the run id lets exactly one of them advance the session.
     if not db.execute("UPDATE sessions SET check_run_id = NULL WHERE id = ? AND check_run_id = ?", session["id"], run_id):
@@ -427,12 +452,14 @@ async def on_check_status(session: dict, run_id: str, status: str, data: dict) -
 
 
 async def on_parent_ended(session: dict, data: dict) -> None:
-    claim_type = session["claim_type"] or claim_from_execution(data)
-    if not db.execute("UPDATE sessions SET parent_ended_at = ?, claim_type = ? WHERE id = ? AND parent_ended_at IS NULL",
-                      time.time(), claim_type, session["id"]):
+    if not db.execute(
+        "UPDATE sessions SET parent_ended_at = ?, claim_type = COALESCE(claim_type, ?) WHERE id = ? AND parent_ended_at IS NULL",
+        time.time(), claim_from_execution(data), session["id"],
+    ):
         return
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
     if session["drill_id"] and not session["verification_started_at"]:
-        record_drill(session["drill_id"], claim_type, None)
+        record_drill(session["drill_id"], session["claim_type"], None)
     if session["verdict"] or not session["verification_started_at"]:
         await send_summary(session["id"])
 
