@@ -24,7 +24,7 @@ log = logging.getLogger("asli")
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
 DRILL_WINDOW_S = 30 * 60
-UNREACHED = {"no-answer", "busy", "failed", "canceled", "cancelled", "error"}
+UNREACHED = {"no-answer", "busy", "failed", "canceled", "error", "balance-low"}
 TERMINAL = UNREACHED | {"completed", "call-disconnected", "stopped"}
 DRILL_EXPECTED = {1: CHILD_SAFE, 2: CHILD_SAFE, 3: "authority", 4: "authority"}
 AUTHORITY_MARK = "डिजिटल अरेस्ट नाम की कोई चीज़"
@@ -74,20 +74,17 @@ app = FastAPI(title="Asli hai?", lifespan=lifespan)
 def require_secret(request: Request) -> None:
     expected = os.getenv("TOOL_SECRET", "")
     auth = request.headers.get("authorization", "")
-    given = auth[7:] if auth.lower().startswith("bearer ") else request.query_params.get("secret", "")
+    given = auth[7:] if auth.lower().startswith("bearer ") else ""
     if not expected or not hmac.compare_digest(given.encode(), expected.encode()):
         raise HTTPException(401, "Bad or missing secret")
 
 
 async def payload(request: Request) -> dict:
-    data = {k: v for k, v in request.query_params.items() if k != "secret"}
     try:
         body = await request.json()
     except ValueError:
-        body = None
-    if isinstance(body, dict):
-        data.update(body)
-    return data
+        return {}
+    return body if isinstance(body, dict) else {}
 
 
 def clean(value) -> str | None:
@@ -146,11 +143,12 @@ def family_contacts(family_id: str) -> list[dict]:
     return db.all_rows("SELECT * FROM contacts WHERE family_id = ? ORDER BY priority", family_id)
 
 
-def claim_from_transcript(transcript) -> str | None:
-    text = transcript if isinstance(transcript, str) else str(transcript or "")
-    if AUTHORITY_MARK in text:
+def claim_from_execution(data: dict) -> str | None:
+    extracted = {**(data.get("extracted_data") or {}), **(data.get("node_extracted_data") or {})}
+    transcript = str(data.get("transcript") or "")
+    if extracted.get("claimed_authority") or AUTHORITY_MARK in transcript:
         return "authority"
-    if PAID_MARK in text:
+    if extracted.get("paid_amount") is not None or PAID_MARK in transcript:
         return "paid"
     return None
 
@@ -386,14 +384,19 @@ async def report_verdict(request: Request):
     return {"received": True}
 
 
-@app.post("/webhooks/bolna", dependencies=[Depends(require_secret)])
+@app.post("/webhooks/bolna")
 async def bolna_webhook(request: Request):
-    data = await payload(request)
-    run_id = clean(data.get("id") or data.get("execution_id"))
-    status = (clean(data.get("status")) or "").lower()
+    run_id = clean((await payload(request)).get("id"))
     session = db.one("SELECT * FROM sessions WHERE check_run_id = ? OR parent_run_id = ?", run_id, run_id) if run_id else None
     if not session:
         return {"ok": True}
+    # Bolna webhooks are unsigned, so act only on the execution as Bolna's API reports it.
+    try:
+        data = await rt.bolna.get_execution(run_id)
+    except Exception:
+        log.exception("get_execution failed run=%s", run_id)
+        return {"ok": False}
+    status = (clean(data.get("status")) or "").lower()
     if session["check_run_id"] == run_id:
         await on_check_status(session, run_id, status, data)
     elif status in TERMINAL:
@@ -401,13 +404,14 @@ async def bolna_webhook(request: Request):
     return {"ok": True}
 
 
-def hit_voicemail(data: dict) -> bool:
-    telephony = data.get("telephony_data") or {}
-    return bool(data.get("answered_by_voice_mail") or telephony.get("answered_by_voice_mail"))
+def not_answered(status: str, data: dict) -> bool:
+    if status in UNREACHED or data.get("answered_by_voice_mail"):
+        return True
+    return status in {"completed", "call-disconnected"} and not data.get("conversation_duration")
 
 
 async def on_check_status(session: dict, run_id: str, status: str, data: dict) -> None:
-    unreached = status in UNREACHED or hit_voicemail(data)
+    unreached = not_answered(status, data)
     if session["verdict"] or not (unreached or status in TERMINAL):
         return
     # Bolna repeats status webhooks; clearing the run id lets exactly one of them advance the session.
@@ -423,7 +427,7 @@ async def on_check_status(session: dict, run_id: str, status: str, data: dict) -
 
 
 async def on_parent_ended(session: dict, data: dict) -> None:
-    claim_type = session["claim_type"] or claim_from_transcript(data.get("transcript"))
+    claim_type = session["claim_type"] or claim_from_execution(data)
     if not db.execute("UPDATE sessions SET parent_ended_at = ?, claim_type = ? WHERE id = ? AND parent_ended_at IS NULL",
                       time.time(), claim_type, session["id"]):
         return

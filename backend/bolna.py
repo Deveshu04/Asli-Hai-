@@ -38,6 +38,12 @@ class Bolna:
             raise BolnaError(f"place_call returned no execution_id: {data}")
         return run_id
 
+    async def get_execution(self, run_id: str) -> dict:
+        res = await self.client.get(f"/executions/{run_id}")
+        if res.is_error:
+            raise BolnaError(f"get_execution {res.status_code}: {res.text[:300]}")
+        return res.json()
+
     async def fire_event(self, run_id: str, event: str, properties: dict | None = None) -> None:
         body = {"event": event, "properties": properties or {}}
         last = None
