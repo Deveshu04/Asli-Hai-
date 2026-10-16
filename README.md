@@ -34,6 +34,17 @@ python scripts/render_agents.py           # writes build/agents/*.json with the 
 
 Create each rendered agent in Bolna, then put the returned ids in `.env` as `AGENT_ID_*`.
 
+## Family summary
+
+After each session the backend WhatsApps a short summary to every family contact. It runs a published Bolna workflow whose `aisensy_whatsapp` node sends an approved AiSensy template; `backend/notify.py` is the sender.
+
+1. In AiSensy, submit the template body from `python scripts/summary_workflow.py --template-text` as a Utility template (language `en`), then launch it as an API campaign once approved.
+2. In Bolna, link the AiSensy project under Integrations.
+3. Put the template and campaign names in `.env` as `AISENSY_TEMPLATE_NAME` and `AISENSY_CAMPAIGN_NAME`.
+4. `python scripts/summary_workflow.py` prints the workflow; `--publish` creates it in Bolna and prints the `SUMMARY_WORKFLOW_ID` for `.env`.
+
+Sending happens in the background, so a slow or failing provider never delays the verdict. Each message carries `reference_id` `<session>-<priority>`, so Bolna refuses a second run for the same contact.
+
 ## Test
 
 ```bash

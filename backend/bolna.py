@@ -46,18 +46,36 @@ class Bolna:
         return res.json()
 
     async def fire_event(self, run_id: str, event: str, properties: dict | None = None) -> None:
-        body = {"event": event, "properties": properties or {}}
+        what = f"fire_event {event}"
+        res = await self._post_retrying(f"/v1/call/{run_id}/events", {"event": event, "properties": properties or {}}, what)
+        if res.is_error:
+            raise BolnaError(f"{what} {res.status_code}: {res.text[:300]}")
+
+    async def run_workflow(self, workflow_id: str, contact: dict) -> str:
+        res = await self._post_retrying(f"/workflows/{workflow_id}/run", contact, "run_workflow")
+        try:
+            data = res.json()
+        except ValueError:
+            data = {}
+        data = data if isinstance(data, dict) else {}
+        detail = data.get("detail") if isinstance(data.get("detail"), dict) else {}
+        # A retry after a lost response lands here; the reference_id already ran, so this is the original run.
+        if res.status_code == 409 and detail.get("code") == "duplicate_run" and detail.get("execution_id"):
+            return detail["execution_id"]
+        if res.is_error or not data.get("execution_id"):
+            raise BolnaError(f"run_workflow {res.status_code}: {res.text[:300]}")
+        return data["execution_id"]
+
+    async def _post_retrying(self, path: str, body: dict, what: str) -> httpx.Response:
         last = None
         for attempt in range(FIRE_ATTEMPTS):
             try:
-                res = await self.client.post(f"/v1/call/{run_id}/events", json=body)
+                res = await self.client.post(path, json=body)
                 if res.status_code < 500:
-                    if res.is_error:
-                        raise BolnaError(f"fire_event {event} {res.status_code}: {res.text[:300]}")
-                    return
-                last = BolnaError(f"fire_event {event} {res.status_code}")
+                    return res
+                last = BolnaError(f"{what} {res.status_code}")
             except httpx.TransportError as exc:
                 last = exc
             if attempt < FIRE_ATTEMPTS - 1:
                 await asyncio.sleep(min(0.5 * 2 ** attempt, 4.0))
-        raise BolnaError(f"fire_event {event} failed after retries: {last}")
+        raise BolnaError(f"{what} failed after retries: {last}")

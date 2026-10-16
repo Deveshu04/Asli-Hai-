@@ -82,6 +82,8 @@ def main() -> None:
     contacts = db.all_rows("SELECT name, phone FROM contacts WHERE family_id = ? ORDER BY priority", args.family_id)
     print(f"Calls {family['parent_name']} at {family['parent_phone']} with parent agent {agent_id} (stack {stack}).")
     print("Then checks with: " + ", ".join(f"{c['name']} {c['phone']}" for c in contacts) + f" via {STACKS[stack]['check']}")
+    if os.getenv("SUMMARY_WORKFLOW_ID"):
+        print("Then WhatsApps the summary to: " + ", ".join(c["phone"] for c in contacts))
     if not args.yes and input("Place this real call? [y/N] ").strip().lower() != "y":
         if drill_id:
             db.execute("DELETE FROM drills WHERE id = ?", drill_id)

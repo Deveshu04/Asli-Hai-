@@ -14,7 +14,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import db
+from . import db, notify
 from .bolna import Bolna
 from .stacks import DEFAULT_STACK, STACKS, Session, pick_stack, stack_for_agent
 from .verdict import CHILD_CONFIRMED, CHILD_SAFE, NOT_CONFIRMED, decide, normalize_word
@@ -38,6 +38,7 @@ PLACEHOLDER = re.compile(r"^%\(\w+\)s$")
 class Runtime:
     def __init__(self):
         self.bolna = None
+        self.sender = None
         self.timers: dict[str, asyncio.Task] = {}
         self.tasks: set[asyncio.Task] = set()
 
@@ -62,11 +63,16 @@ async def lifespan(app: FastAPI):
     owned = rt.bolna is None
     if owned:
         rt.bolna = Bolna()
+    owned_sender = rt.sender is None
+    if owned_sender:
+        rt.sender = notify.from_env(rt.bolna)
     rearm_timers()
     yield
     for task in list(rt.tasks):
         task.cancel()
     rt.timers.clear()
+    if owned_sender:
+        rt.sender = None
     if owned:
         await rt.bolna.aclose()
         rt.bolna = None
@@ -178,7 +184,7 @@ async def finish(session_id: str, event: str, properties: dict, reason: str) -> 
     if session["drill_id"]:
         record_drill(session["drill_id"], event, seconds)
     if session["parent_ended_at"]:
-        await send_summary(session_id)
+        send_summary(session_id)
     return True
 
 
@@ -257,17 +263,20 @@ def summary_text(session: dict, family: dict) -> str:
         "paid": f"{family['parent_name']} may have already sent money or an OTP. Saathi told them to call 1930 and their bank. Please call them now.",
     }
     outcome = outcomes.get(session["verdict"] or session["claim_type"], f"{family['parent_name']} used the line; no verdict was reached.")
-    return f"Asli hai?: {family['parent_name']} got a call from {who}{asked}. {outcome}"
+    return f"{family['parent_name']} got a call from {who}{asked}. {outcome}"
 
 
-async def send_summary(session_id: str) -> None:
+def send_summary(session_id: str) -> None:
     if not db.execute("UPDATE sessions SET summary_sent_at = ? WHERE id = ? AND summary_sent_at IS NULL", time.time(), session_id):
+        return
+    if rt.sender is None:
+        log.warning("no summary sender configured (SUMMARY_WORKFLOW_ID) session=%s", session_id)
         return
     session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
     family = db.one("SELECT * FROM families WHERE id = ?", session["family_id"])
-    text = summary_text(session, family)
-    for contact in family_contacts(session["family_id"]):
-        log.info("summary session=%s to=%s text=%s", session_id, contact["phone"], text)
+    contacts = family_contacts(session["family_id"])
+    # Spawned so a slow or failing provider never holds up the verdict or the webhook reply.
+    rt.spawn(notify.deliver(rt.sender, session_id, contacts, summary_text(session, family)))
 
 
 class ContactIn(BaseModel):
@@ -461,7 +470,7 @@ async def on_parent_ended(session: dict, data: dict) -> None:
     if session["drill_id"] and not session["verification_started_at"]:
         record_drill(session["drill_id"], session["claim_type"], None)
     if session["verdict"] or not session["verification_started_at"]:
-        await send_summary(session["id"])
+        send_summary(session["id"])
 
 
 @app.get("/lookup", dependencies=[Depends(require_secret)])
