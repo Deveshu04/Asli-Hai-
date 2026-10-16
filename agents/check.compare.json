@@ -1,0 +1,224 @@
+{
+  "agent_config": {
+    "agent_name": "Asli hai? Family check (Compare)",
+    "agent_type": "other",
+    "agent_welcome_message": "नमस्ते {{child_name}}, मैं 'असली है?' से बोल रही हूँ, {{parent_name}} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {{claimed_name}} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
+    "webhook_url": "https://YOUR-BACKEND/webhooks/bolna",
+    "tasks": [
+      {
+        "task_type": "conversation",
+        "toolchain": {
+          "execution": "parallel",
+          "pipelines": [
+            [
+              "transcriber",
+              "llm",
+              "synthesizer"
+            ]
+          ]
+        },
+        "task_config": {
+          "hangup_after_LLMCall": false,
+          "call_terminate": 120,
+          "voicemail": true
+        },
+        "tools_config": {
+          "input": {
+            "format": "wav",
+            "provider": "plivo"
+          },
+          "output": {
+            "format": "wav",
+            "provider": "plivo"
+          },
+          "api_tools": {
+            "tools": [
+              {
+                "key": "custom_task",
+                "name": "report_verdict",
+                "description": "Send the family member's answer to the safety line.",
+                "parameters": {
+                  "type": "object",
+                  "required": [
+                    "session_id",
+                    "did_call"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string"
+                    },
+                    "did_call": {
+                      "type": "string"
+                    },
+                    "spoken_word": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ],
+            "tools_params": {
+              "report_verdict": {
+                "url": "https://YOUR-BACKEND/tools/report_verdict",
+                "method": "POST",
+                "param": {
+                  "session_id": "%(session_id)s",
+                  "did_call": "%(did_call)s",
+                  "spoken_word": "%(spoken_word)s"
+                },
+                "headers": {
+                  "Authorization": "Bearer YOUR_TOOL_SECRET",
+                  "Content-Type": "application/json"
+                },
+                "scope": "node",
+                "nodes": [
+                  "report"
+                ]
+              }
+            }
+          },
+          "llm_agent": {
+            "agent_type": "graph_agent",
+            "agent_flow_type": "streaming",
+            "llm_config": {
+              "provider": "openai",
+              "model": "gpt-5.4-mini",
+              "temperature": 1,
+              "max_tokens": 120,
+              "routing_model": "gpt-4.1-mini",
+              "agent_information": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now.",
+              "current_node_id": "ask_called",
+              "nodes": [
+                {
+                  "id": "ask_called",
+                  "prompt": "Get a clear yes or no: did they just call {{parent_name}} asking for money or help? Repeat the question once if they are confused.",
+                  "repeat_after_silence_seconds": 8,
+                  "edges": [
+                    {
+                      "to_node_id": "route_called",
+                      "condition": "The person answered whether they called",
+                      "parameters": {
+                        "did_call": {
+                          "type": "string",
+                          "description": "Yes if they called the parent and asked for money or help. No if they did not. Unsure if unclear or someone else answered.",
+                          "allowed_values": [
+                            "Yes",
+                            "No",
+                            "Unsure"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "to_node_id": "report",
+                      "condition_type": "expression",
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "_silence_repeats",
+                            "operator": "gte",
+                            "value": 2
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "route_called",
+                  "node_type": "router",
+                  "edges": [
+                    {
+                      "to_node_id": "report",
+                      "condition_type": "expression",
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "did_call",
+                            "operator": "eq",
+                            "value": "No"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "to_node_id": "ask_word",
+                      "condition_type": "expression",
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "did_call",
+                            "operator": "eq",
+                            "value": "Yes"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "to_node_id": "report",
+                      "condition_type": "unconditional"
+                    }
+                  ]
+                },
+                {
+                  "id": "ask_word",
+                  "prompt": "Ask them to say the family word. Never say or hint at the word yourself.",
+                  "edges": [
+                    {
+                      "to_node_id": "report",
+                      "condition": "They said a word or phrase, or said they don't know it",
+                      "parameters": {
+                        "spoken_word": "string"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "report",
+                  "prompt": "Call @report_verdict with session_id {{session_id}}, did_call and spoken_word.",
+                  "function_call": "report_verdict",
+                  "edges": [
+                    {
+                      "to_node_id": "thanks",
+                      "condition_type": "unconditional"
+                    }
+                  ]
+                },
+                {
+                  "id": "thanks",
+                  "node_type": "static",
+                  "static_message": "शुक्रिया। मैं उन्हें अभी बता रही हूँ। नमस्ते।",
+                  "function_call": "end_call",
+                  "edges": []
+                }
+              ],
+              "reasoning_effort": "none"
+            }
+          },
+          "transcriber": {
+            "provider": "deepgram",
+            "model": "nova-3",
+            "language": "multi-hi",
+            "stream": true,
+            "endpointing": 400
+          },
+          "synthesizer": {
+            "provider": "cartesia",
+            "stream": true,
+            "provider_config": {
+              "model": "sonic-3.6",
+              "voice": "PICK_A_HINDI_VOICE",
+              "voice_id": "PICK_A_HINDI_VOICE_ID",
+              "language": "hi"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "agent_prompts": {
+    "task_1": {
+      "system_prompt": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now."
+    }
+  }
+}
