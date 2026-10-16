@@ -1,0 +1,99 @@
+import os
+import sqlite3
+from contextlib import contextmanager
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS families (
+    id TEXT PRIMARY KEY,
+    parent_name TEXT NOT NULL,
+    parent_phone TEXT NOT NULL UNIQUE,
+    language TEXT NOT NULL DEFAULT 'hi',
+    family_word_latin TEXT NOT NULL,
+    family_word_devanagari TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS contacts (
+    family_id TEXT NOT NULL REFERENCES families(id),
+    name TEXT NOT NULL,
+    relation TEXT,
+    phone TEXT NOT NULL,
+    priority INTEGER NOT NULL,
+    PRIMARY KEY (family_id, priority)
+);
+
+CREATE TABLE IF NOT EXISTS drills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id TEXT NOT NULL REFERENCES families(id),
+    stack TEXT,
+    script INTEGER NOT NULL,
+    ran_at REAL NOT NULL,
+    used_line INTEGER NOT NULL DEFAULT 0,
+    seconds_to_verdict REAL,
+    verdict_correct INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    family_id TEXT NOT NULL REFERENCES families(id),
+    parent_run_id TEXT,
+    stack TEXT NOT NULL,
+    claimed_name TEXT,
+    amount REAL,
+    claim_type TEXT,
+    verdict TEXT,
+    started_at REAL NOT NULL,
+    verdict_at REAL,
+    story TEXT,
+    drill_id INTEGER REFERENCES drills(id),
+    verification_started_at REAL,
+    check_run_id TEXT,
+    contact_priority INTEGER,
+    parent_ended_at REAL,
+    summary_sent_at REAL
+);
+
+CREATE INDEX IF NOT EXISTS sessions_parent_run ON sessions(parent_run_id);
+CREATE INDEX IF NOT EXISTS sessions_check_run ON sessions(check_run_id);
+"""
+
+
+def db_path() -> str:
+    return os.getenv("DB_PATH", "asli.db")
+
+
+@contextmanager
+def connect():
+    conn = sqlite3.connect(db_path(), timeout=10)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
+
+
+def init_db() -> None:
+    with connect() as conn:
+        conn.executescript(SCHEMA)
+
+
+def one(sql: str, *args) -> dict | None:
+    with connect() as conn:
+        row = conn.execute(sql, args).fetchone()
+    return dict(row) if row else None
+
+
+def all_rows(sql: str, *args) -> list[dict]:
+    with connect() as conn:
+        return [dict(r) for r in conn.execute(sql, args).fetchall()]
+
+
+def execute(sql: str, *args) -> int:
+    with connect() as conn:
+        return conn.execute(sql, args).rowcount
+
+
+def insert(sql: str, *args) -> int:
+    with connect() as conn:
+        return conn.execute(sql, args).lastrowid
