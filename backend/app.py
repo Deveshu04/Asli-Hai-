@@ -225,7 +225,7 @@ async def dial(session_id: str, start: int) -> None:
 
 def summary_text(session: dict, family: dict) -> str:
     who = session["claimed_name"] or "someone"
-    amount = f" for Rs {session['amount']:,.0f}" if session["amount"] else ""
+    asked = f" asking for Rs {session['amount']:,.0f}" if session["amount"] else ""
     outcomes = {
         CHILD_SAFE: f"The family said they did not call. Saathi told {family['parent_name']} it was fake and not to pay.",
         CHILD_CONFIRMED: f"The family confirmed the call with the family word. Saathi told {family['parent_name']} it was genuine.",
@@ -234,7 +234,7 @@ def summary_text(session: dict, family: dict) -> str:
         "paid": f"{family['parent_name']} may have already sent money or an OTP. Saathi told them to call 1930 and their bank. Please call them now.",
     }
     outcome = outcomes.get(session["verdict"] or session["claim_type"], f"{family['parent_name']} used the line; no verdict was reached.")
-    return f"Asli hai?: {family['parent_name']} got a call from {who} asking{amount}. {outcome}"
+    return f"Asli hai?: {family['parent_name']} got a call from {who}{asked}. {outcome}"
 
 
 async def send_summary(session_id: str) -> None:
