@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e4edf5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="असली है?">
+  <title>असली है?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="tap">
+    <h1 class="mark">असली है?</h1>
+
+    <div class="tap-center">
+      <p class="question">किसी ने फ़ोन पर पैसे या OTP माँगा?</p>
+      <button id="seal" class="seal" type="button">दबाइए</button>
+      <p id="status" class="status" role="status" aria-live="polite">दबाते ही साथी आपको कॉल करेगी। कुछ भी भेजने से पहले उनसे बात कीजिए।</p>
+    </div>
+
+    <p class="helpline">पैसे जा चुके हैं? तुरंत कॉल कीजिए <a href="tel:1930"><strong>1930</strong></a></p>
+  </main>
+
+  <script>
+    const seal = document.getElementById("seal");
+    const status = document.getElementById("status");
+    const familyId = new URLSearchParams(location.search).get("f");
+    const IDLE_TEXT = status.textContent;
+
+    function show(text, isError) {
+      status.textContent = text;
+      status.classList.toggle("error", Boolean(isError));
+    }
+
+    if (!familyId) {
+      seal.disabled = true;
+      show("यह लिंक अधूरा है। अपने परिवार से नया लिंक माँगिए।", true);
+    }
+
+    seal.addEventListener("click", async () => {
+      seal.disabled = true;
+      seal.classList.remove("stamped");
+      void seal.offsetWidth;
+      seal.classList.add("stamped");
+      show("कॉल लगा रहे हैं…");
+
+      try {
+        const res = await fetch("../trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ family_id: familyId }),
+        });
+        if (res.status === 404) {
+          show("यह लिंक अब काम नहीं करता। अपने परिवार से नया लिंक माँगिए।", true);
+          return;
+        }
+        if (!res.ok) throw new Error(res.status);
+        seal.classList.add("calling");
+        seal.textContent = "कॉल आ रहा है";
+        show("आपका फ़ोन अभी बजेगा। उसे उठाइए।");
+        setTimeout(() => {
+          seal.classList.remove("calling");
+          seal.textContent = "दबाइए";
+          seal.disabled = false;
+          show(IDLE_TEXT);
+        }, 45000);
+      } catch (err) {
+        seal.disabled = false;
+        show("कॉल नहीं लग पाया। एक बार फिर दबाइए।", true);
+      }
+    });
+  </script>
+</body>
+</html>

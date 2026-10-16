@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e4edf5">
+  <title>Register your family · असली है?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="signup">
+    <header>
+      <h1 class="mark">असली है?</h1>
+      <p class="lede">When someone calls your parent asking for money, your parent taps one button. Saathi calls them back, then calls you to check whether it was really you.</p>
+    </header>
+
+    <form id="signup" novalidate>
+      <fieldset>
+        <legend>Your parent</legend>
+        <div class="field">
+          <label for="parent_name">Name Saathi should use</label>
+          <input id="parent_name" name="parent_name" required autocomplete="off" placeholder="Sunita">
+        </div>
+        <div class="pair">
+          <div class="field">
+            <label for="parent_phone">Mobile number</label>
+            <input id="parent_phone" name="parent_phone" required inputmode="tel" autocomplete="off" placeholder="98100 12345">
+          </div>
+          <div class="field">
+            <label for="language">Language</label>
+            <select id="language" name="language">
+              <option value="hi">Hindi</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Who Saathi calls to check</legend>
+        <p class="hint">Saathi tries the first person, then the second if they don't pick up. Save Saathi's calling number in both phones so you don't ignore it.</p>
+        <div class="contact" data-contact="1">
+          <h3>First to call</h3>
+          <div class="pair">
+            <div class="field">
+              <label for="c1_name">Name</label>
+              <input id="c1_name" required autocomplete="off" placeholder="Rahul">
+            </div>
+            <div class="field">
+              <label for="c1_relation">Relation to parent</label>
+              <input id="c1_relation" autocomplete="off" placeholder="beta">
+            </div>
+          </div>
+          <div class="field">
+            <label for="c1_phone">Mobile number</label>
+            <input id="c1_phone" required inputmode="tel" autocomplete="off" placeholder="98200 54321">
+          </div>
+        </div>
+        <div class="contact" data-contact="2">
+          <h3>Second to call <span class="optional">(optional)</span></h3>
+          <div class="pair">
+            <div class="field">
+              <label for="c2_name">Name</label>
+              <input id="c2_name" autocomplete="off" placeholder="Priya">
+            </div>
+            <div class="field">
+              <label for="c2_relation">Relation to parent</label>
+              <input id="c2_relation" autocomplete="off" placeholder="beti">
+            </div>
+          </div>
+          <div class="field">
+            <label for="c2_phone">Mobile number</label>
+            <input id="c2_phone" inputmode="tel" autocomplete="off">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Family word</legend>
+        <p class="hint">When you really need money, Saathi asks you for this word before telling your parent the call was genuine. Pick something a stranger can't find online, and type it the same way in both scripts.</p>
+        <div class="pair">
+          <div class="field">
+            <label for="family_word_latin">In English letters</label>
+            <input id="family_word_latin" required autocomplete="off" spellcheck="false" placeholder="aam ras">
+          </div>
+          <div class="field">
+            <label for="family_word_devanagari">In Hindi letters</label>
+            <input id="family_word_devanagari" required autocomplete="off" spellcheck="false" lang="hi" placeholder="आम रस">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pilot invite</legend>
+        <div class="field">
+          <label for="invite_code">Invite code <span class="optional">(from the pilot team)</span></label>
+          <input id="invite_code" autocomplete="off">
+        </div>
+      </fieldset>
+
+      <button class="primary" type="submit">Register family</button>
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+    </form>
+
+    <section id="done" class="done" hidden>
+      <h2>Family registered</h2>
+      <p>Open this link on your parent's phone and add it to the home screen. That is their button.</p>
+      <div class="link-row">
+        <input id="tap-link" readonly aria-label="Your parent's button link">
+        <button id="copy" type="button">Copy</button>
+      </div>
+      <ol>
+        <li>On your parent's phone, open the link in Chrome.</li>
+        <li>Tap the menu, then "Add to Home screen".</li>
+        <li>Tell your parent: before paying anyone who calls, press the yellow button.</li>
+      </ol>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("signup");
+    const errorBox = document.getElementById("form-error");
+    const val = (id) => document.getElementById(id).value.trim();
+
+    function fail(message) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorBox.hidden = true;
+
+      const contacts = [1, 2]
+        .map((n) => ({ name: val(`c${n}_name`), relation: val(`c${n}_relation`), phone: val(`c${n}_phone`) }))
+        .filter((c) => c.name || c.phone);
+
+      if (!val("parent_name") || !val("parent_phone")) return fail("Add your parent's name and mobile number.");
+      if (!contacts.length || contacts.some((c) => !c.name || !c.phone)) return fail("Each person Saathi calls needs a name and a mobile number.");
+      if (!val("family_word_latin") || !val("family_word_devanagari")) return fail("Type the family word in both English and Hindi letters.");
+
+      const button = form.querySelector("button[type=submit]");
+      button.disabled = true;
+      try {
+        const res = await fetch("../families", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            parent_name: val("parent_name"),
+            parent_phone: val("parent_phone"),
+            language: val("language"),
+            contacts,
+            family_word_latin: val("family_word_latin"),
+            family_word_devanagari: val("family_word_devanagari"),
+            invite_code: val("invite_code"),
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return fail(typeof body.detail === "string" ? body.detail : "Registration didn't go through. Check the details and try again.");
+        form.hidden = true;
+        document.getElementById("tap-link").value = new URL(body.tap_url, location.href).href;
+        document.getElementById("done").hidden = false;
+      } catch (err) {
+        fail("Couldn't reach the server. Check your connection and try again.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById("copy").addEventListener("click", async (event) => {
+      const link = document.getElementById("tap-link");
+      try {
+        await navigator.clipboard.writeText(link.value);
+        event.target.textContent = "Copied";
+      } catch {
+        link.select();
+      }
+    });
+  </script>
+</body>
+</html>
