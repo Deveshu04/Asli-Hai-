@@ -44,9 +44,10 @@ WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
 RESCUES_PER_HOUR = 10
 PRESSES_PER_HOUR = 20
-CALLS_PER_NUMBER_PER_HOUR = 15
+RESCUES_PER_NUMBER_PER_HOUR = 15
 NAME_MAX = 40
-INVITE_FAILURES_MAX = 30
+INVITE_FAILURES_MAX = 300
+INVITE_FAILURES_PER_CLIENT = 10
 INVITE_FAILURE_WINDOW_S = 15 * 60
 MAX_BODY_BYTES = 64 * 1024
 SECURITY_HEADERS = {
@@ -82,7 +83,7 @@ class Runtime:
         self.sender = None
         self.timers: dict[str, asyncio.Task] = {}
         self.tasks: set[asyncio.Task] = set()
-        self.invite_failures: deque[float] = deque()
+        self.invite_failures: deque[tuple[float, str]] = deque()
 
     def spawn(self, coro) -> asyncio.Task:
         task = asyncio.create_task(coro)
@@ -125,11 +126,36 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Asli hai?", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
+class BodyLimit:
+    """Counts request bytes as they arrive, so a chunked body with no Content-Length can't slip past the cap."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        length = dict(scope["headers"]).get(b"content-length")
+        if length and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
+            return await JSONResponse({"detail": "Request too large"}, status_code=413)(scope, receive, send)
+        seen = 0
+
+        async def counted():
+            nonlocal seen
+            message = await receive()
+            seen += len(message.get("body", b""))
+            if seen > MAX_BODY_BYTES:
+                raise HTTPException(413, "Request too large")
+            return message
+
+        await self.app(scope, counted, send)
+
+
+app.add_middleware(BodyLimit)
+
+
 @app.middleware("http")
 async def guard(request: Request, call_next):
-    length = request.headers.get("content-length")
-    if length and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
-        return JSONResponse({"detail": "Request too large"}, status_code=413)
     response = await call_next(request)
     response.headers.update(SECURITY_HEADERS)
     if not request.url.path.startswith("/web/"):
@@ -219,14 +245,19 @@ def seal_stored_words() -> None:
         log.info("sealed family words families=%d", len(rows))
 
 
-def number_capped(phone: str) -> bool:
-    # A number can be a contact in many families, so the cap is per number, whoever registered it.
+def rescue_number_capped(phone: str) -> bool:
+    # A number can sit in many families, so press-time rescue calls are capped per number. Check and alert calls
+    # are never capped this way: someone padding the count must not be able to block a real family's check.
     calls = db.one("SELECT COUNT(*) AS n FROM outbound WHERE phone = ? AND at > ?", phone, time.time() - 3600)["n"]
-    if calls >= CALLS_PER_NUMBER_PER_HOUR:
-        log.warning("call cap reached for a contact number")
+    if calls >= RESCUES_PER_NUMBER_PER_HOUR:
+        log.warning("rescue cap reached for a contact number")
         return True
-    db.execute("INSERT INTO outbound (phone, at) VALUES (?, ?)", phone, time.time())
     return False
+
+
+def client_ip(request: Request) -> str:
+    # Cloudflare in front of Render sets CF-Connecting-IP and overwrites any value a client sends.
+    return request.headers.get("cf-connecting-ip") or (request.client.host if request.client else "")
 
 
 def new_id(prefix: str) -> str:
@@ -343,8 +374,6 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
-        if number_capped(contact["phone"]):
-            continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "alert" if alert else "verify"))
         except MAYBE_SENT:
@@ -411,7 +440,7 @@ async def start_rescue(session_id: str, after_priority: int = 0) -> None:
         log.error("no check agent for stack=%s", session["stack"])
         return
     for contact in family_contacts(session["family_id"]):
-        if contact["priority"] <= after_priority or number_capped(contact["phone"]):
+        if contact["priority"] <= after_priority or rescue_number_capped(contact["phone"]):
             continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "rescue"))
@@ -423,6 +452,7 @@ async def start_rescue(session_id: str, after_priority: int = 0) -> None:
             continue
         db.execute("UPDATE sessions SET rescue_run_id = ?, rescue_priority = ?, rescue_ended_at = NULL WHERE id = ?",
                    run_id, contact["priority"], session_id)
+        db.execute("INSERT INTO outbound (phone, at) VALUES (?, ?)", contact["phone"], time.time())
         log.info("rescue call session=%s priority=%s run=%s", session_id, contact["priority"], run_id)
         return
     log.warning("rescue reached no one session=%s", session_id)
@@ -565,16 +595,16 @@ def health():
 
 
 @app.post("/families")
-def register_family(body: FamilyIn):
+def register_family(body: FamilyIn, request: Request):
     code = os.getenv("SIGNUP_CODE")
-    failures = rt.invite_failures
-    while failures and failures[0] < time.time() - INVITE_FAILURE_WINDOW_S:
+    failures, now, ip = rt.invite_failures, time.time(), client_ip(request)
+    while failures and failures[0][0] < now - INVITE_FAILURE_WINDOW_S:
         failures.popleft()
-    # Counted across everyone: behind Render's proxy there is no client address worth trusting.
-    if code and len(failures) >= INVITE_FAILURES_MAX:
+    # Per client, so one guesser can't lock out real families; the global ceiling only stops a distributed guess.
+    if code and (len(failures) >= INVITE_FAILURES_MAX or sum(who == ip for _, who in failures) >= INVITE_FAILURES_PER_CLIENT):
         raise HTTPException(429, "Too many wrong invite codes. Try again in a few minutes.")
     if code and not hmac.compare_digest(body.invite_code.strip().encode(), code.encode()):
-        failures.append(time.time())
+        failures.append((now, ip))
         raise HTTPException(403, "That invite code isn't valid. Ask the pilot team for yours.")
     try:
         parent_phone = to_e164(body.parent_phone)
