@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE TABLE IF NOT EXISTS outbound (
     phone TEXT NOT NULL,
-    at REAL NOT NULL
+    at REAL NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'rescue'
 );
 
-CREATE INDEX IF NOT EXISTS outbound_phone ON outbound(phone, at);
 CREATE INDEX IF NOT EXISTS sessions_parent_run ON sessions(parent_run_id);
 CREATE INDEX IF NOT EXISTS sessions_check_run ON sessions(check_run_id);
 """
@@ -96,6 +96,7 @@ ADDED_COLUMNS = [
     ("sessions", "rescue_pending", "TEXT"),
     ("sessions", "rescue_told_at", "REAL"),
     ("sessions", "retried_at", "REAL"),
+    ("outbound", "kind", "TEXT NOT NULL DEFAULT 'rescue'"),
 ]
 
 
@@ -106,6 +107,8 @@ def init_db() -> None:
             if column not in {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
         conn.execute("CREATE INDEX IF NOT EXISTS sessions_rescue_run ON sessions(rescue_run_id)")
+        conn.execute("DROP INDEX IF EXISTS outbound_phone")
+        conn.execute("CREATE INDEX IF NOT EXISTS outbound_phone_kind ON outbound(phone, kind, at)")
 
 
 def one(sql: str, *args) -> dict | None:

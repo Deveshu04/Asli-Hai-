@@ -45,8 +45,9 @@ RETAP_WINDOW_S = 30
 RESCUES_PER_HOUR = 10
 PRESSES_PER_HOUR = 20
 RESCUES_PER_NUMBER_PER_HOUR = 15
+CHECKS_PER_NUMBER_PER_HOUR = 40
 NAME_MAX = 40
-INVITE_FAILURES_MAX = 300
+INVITE_FAILURES_MAX = 100
 INVITE_FAILURES_PER_CLIENT = 10
 INVITE_FAILURE_WINDOW_S = 15 * 60
 MAX_BODY_BYTES = 64 * 1024
@@ -245,14 +246,28 @@ def seal_stored_words() -> None:
         log.info("sealed family words families=%d", len(rows))
 
 
-def rescue_number_capped(phone: str) -> bool:
-    # A number can sit in many families, so press-time rescue calls are capped per number. Check and alert calls
-    # are never capped this way: someone padding the count must not be able to block a real family's check.
-    calls = db.one("SELECT COUNT(*) AS n FROM outbound WHERE phone = ? AND at > ?", phone, time.time() - 3600)["n"]
-    if calls >= RESCUES_PER_NUMBER_PER_HOUR:
-        log.warning("rescue cap reached for a contact number")
-        return True
-    return False
+def reserve_call(phone: str, kind: str, cap: int) -> int | None:
+    """Claims one of a number's hourly call slots, or None when they're used up.
+
+    A number can sit in many families, so the cap is per number. Check and alert calls get their own, higher cap,
+    so padding the rescue count can never block a real family's check. Check and claim are one statement, so
+    concurrent presses can't overshoot.
+    """
+    now = time.time()
+    with db.connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO outbound (phone, at, kind) SELECT ?, ?, ?"
+            " WHERE (SELECT COUNT(*) FROM outbound WHERE phone = ? AND kind = ? AND at > ?) < ?",
+            (phone, now, kind, phone, kind, now - 3600, cap),
+        )
+        if cur.rowcount:
+            return cur.lastrowid
+    log.warning("%s cap reached for a contact number", kind)
+    return None
+
+
+def release_call(slot: int) -> None:
+    db.execute("DELETE FROM outbound WHERE rowid = ?", slot)
 
 
 def client_ip(request: Request) -> str:
@@ -374,6 +389,9 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
+        slot = reserve_call(contact["phone"], "check", CHECKS_PER_NUMBER_PER_HOUR)
+        if slot is None:
+            continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "alert" if alert else "verify"))
         except MAYBE_SENT:
@@ -381,6 +399,7 @@ async def dial(session_id: str, start: int) -> None:
             log.error("check call timed out session=%s priority=%s; leaving it to the timer", session_id, contact["priority"])
             return
         except Exception:
+            release_call(slot)
             log.exception("check call failed session=%s priority=%s", session_id, contact["priority"])
             continue
         db.execute("UPDATE sessions SET check_run_id = ?, contact_priority = ? WHERE id = ?", run_id, contact["priority"], session_id)
@@ -440,7 +459,10 @@ async def start_rescue(session_id: str, after_priority: int = 0) -> None:
         log.error("no check agent for stack=%s", session["stack"])
         return
     for contact in family_contacts(session["family_id"]):
-        if contact["priority"] <= after_priority or rescue_number_capped(contact["phone"]):
+        if contact["priority"] <= after_priority:
+            continue
+        slot = reserve_call(contact["phone"], "rescue", RESCUES_PER_NUMBER_PER_HOUR)
+        if slot is None:
             continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "rescue"))
@@ -448,11 +470,11 @@ async def start_rescue(session_id: str, after_priority: int = 0) -> None:
             log.error("rescue call timed out session=%s priority=%s", session_id, contact["priority"])
             return
         except Exception:
+            release_call(slot)
             log.exception("rescue call failed session=%s priority=%s", session_id, contact["priority"])
             continue
         db.execute("UPDATE sessions SET rescue_run_id = ?, rescue_priority = ?, rescue_ended_at = NULL WHERE id = ?",
                    run_id, contact["priority"], session_id)
-        db.execute("INSERT INTO outbound (phone, at) VALUES (?, ?)", contact["phone"], time.time())
         log.info("rescue call session=%s priority=%s run=%s", session_id, contact["priority"], run_id)
         return
     log.warning("rescue reached no one session=%s", session_id)
