@@ -1,5 +1,6 @@
 import asyncio
 import hmac
+import json
 import logging
 import os
 import re
@@ -16,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from . import db, notify
 from .bolna import Bolna
-from .languages import DEFAULT_LANGUAGE, LANGUAGES, greeting, in_script
+from .languages import DEFAULT_LANGUAGE, LANGUAGES, asked, greeting, in_script
 from .stacks import DEFAULT_STACK, STACKS, Session, pick_stack, stack_for_agent
 from .verdict import CHILD_CONFIRMED, CHILD_SAFE, NOT_CONFIRMED, decide, normalize_word
 
@@ -31,7 +32,8 @@ CHECK_FINAL = UNREACHED | {"completed", "stopped"}
 PARENT_ENDED = CHECK_FINAL | {"call-disconnected"}
 MAYBE_SENT = (httpx.ReadTimeout, httpx.WriteTimeout)
 ALERT_CLAIMS = {"authority", "paid"}
-CALLBACK_DELAY_MAX_S = 60
+RESCUE_RETRIES = 12
+RESCUE_RETRY_S = 5.0
 DRILL_EXPECTED = {1: CHILD_SAFE, 2: CHILD_SAFE, 3: "authority", 4: "authority"}
 AUTHORITY_MARK = "डिजिटल अरेस्ट नाम की कोई चीज़"
 PAID_MARK = "अभी तुरंत 1930 पर कॉल कीजिए"
@@ -207,6 +209,13 @@ async def verdict_timeout(session_id: str, delay: float) -> None:
     await finish(session_id, NOT_CONFIRMED, {}, "timeout")
 
 
+def arm_timer(session_id: str) -> None:
+    old = rt.timers.pop(session_id, None)
+    if old:
+        old.cancel()
+    rt.timers[session_id] = rt.spawn(verdict_timeout(session_id, verdict_timeout_s()))
+
+
 def rearm_timers() -> None:
     now = time.time()
     pending = db.all_rows(
@@ -216,6 +225,23 @@ def rearm_timers() -> None:
     for row in pending:
         delay = max(0.0, row["verification_started_at"] + verdict_timeout_s() - now)
         rt.timers[row["id"]] = rt.spawn(verdict_timeout(row["id"], delay))
+
+
+def check_user_data(session: dict, family: dict, contact: dict, mode: str) -> dict:
+    claimed_name = session["claimed_name"] or contact["name"]
+    kind = {"verify": "check", "alert": f"alert_{session['claim_type']}"}.get(mode, mode)
+    return {
+        "session_id": session["id"],
+        "child_name": contact["name"],
+        "parent_name": family["parent_name"],
+        "claimed_name": claimed_name,
+        "amount_asked": session["amount"] or 0,
+        "did_call": "Unsure",
+        "spoken_word": "",
+        "agent_language": family["language"],
+        "mode": mode,
+        "greeting": greeting(family["language"], kind, child_name=contact["name"], parent_name=family["parent_name"], claimed_name=claimed_name),
+    }
 
 
 async def dial(session_id: str, start: int) -> None:
@@ -231,22 +257,8 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
-        claimed_name = session["claimed_name"] or contact["name"]
-        kind = f"alert_{session['claim_type']}" if alert else "check"
-        user_data = {
-            "session_id": session_id,
-            "child_name": contact["name"],
-            "parent_name": family["parent_name"],
-            "claimed_name": claimed_name,
-            "amount_asked": session["amount"] or 0,
-            "did_call": "Unsure",
-            "spoken_word": "",
-            "agent_language": family["language"],
-            "mode": "alert" if alert else "verify",
-            "greeting": greeting(family["language"], kind, child_name=contact["name"], parent_name=family["parent_name"], claimed_name=claimed_name),
-        }
         try:
-            run_id = await rt.bolna.place_call(agent_id, contact["phone"], user_data)
+            run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "alert" if alert else "verify"))
         except MAYBE_SENT:
             # Bolna may already be ringing this contact; dialing the next would ring two phones at once.
             log.error("check call timed out session=%s priority=%s; leaving it to the timer", session_id, contact["priority"])
@@ -272,8 +284,114 @@ async def start_alert(session_id: str, claim: str) -> bool:
     ):
         return False
     log.info("alerting family session=%s claim=%s", session_id, claim)
-    rt.spawn(dial(session_id, 0))
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
+    family = db.one("SELECT parent_name, language FROM families WHERE id = ?", session["family_id"])
+    if not await tell_rescue(session_id, "rescue_update", rescue_story(session, family, f"update_{claim}")):
+        rt.spawn(dial(session_id, 0))
     return True
+
+
+def rescue_enabled() -> bool:
+    # The rescue call runs alongside the parent's, so it needs a Bolna concurrency of at least 2.
+    return os.getenv("RESCUE_CALLS", "on").lower() not in {"off", "0", "false", "no"}
+
+
+def rescue_live(session: dict) -> bool:
+    return bool(session["rescue_run_id"]) and not session["rescue_ended_at"]
+
+
+def rescue_story(session: dict, family: dict, kind: str) -> dict:
+    lang = family["language"]
+    return {"update": greeting(lang, kind, parent_name=family["parent_name"], claimed_name=session["claimed_name"] or "", asked=asked(lang, session["amount"]))}
+
+
+async def start_rescue(session_id: str, after_priority: int = 0) -> None:
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
+    family = db.one("SELECT parent_name, language FROM families WHERE id = ?", session["family_id"])
+    agent_id = STACKS.get(session["stack"], {}).get("check")
+    if not agent_id:
+        log.error("no check agent for stack=%s", session["stack"])
+        return
+    for contact in family_contacts(session["family_id"]):
+        if contact["priority"] <= after_priority:
+            continue
+        try:
+            run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "rescue"))
+        except MAYBE_SENT:
+            log.error("rescue call timed out session=%s priority=%s", session_id, contact["priority"])
+            return
+        except Exception:
+            log.exception("rescue call failed session=%s priority=%s", session_id, contact["priority"])
+            continue
+        db.execute("UPDATE sessions SET rescue_run_id = ?, rescue_priority = ?, rescue_ended_at = NULL WHERE id = ?",
+                   run_id, contact["priority"], session_id)
+        log.info("rescue call session=%s priority=%s run=%s", session_id, contact["priority"], run_id)
+        return
+    log.warning("rescue reached no one session=%s", session_id)
+
+
+async def tell_rescue(session_id: str, event: str, properties: dict) -> bool:
+    """Queues the story for the live rescue call; False when there is none to tell."""
+    if not db.execute(
+        "UPDATE sessions SET rescue_pending = ? WHERE id = ? AND rescue_run_id IS NOT NULL"
+        " AND rescue_ended_at IS NULL AND rescue_pending IS NULL",
+        json.dumps({"event": event, "properties": properties}, ensure_ascii=False), session_id,
+    ):
+        return False
+    if not await deliver_rescue(session_id):
+        rt.spawn(keep_telling_rescue(session_id))
+    return True
+
+
+async def deliver_rescue(session_id: str) -> bool:
+    # Claiming first stops the in-progress webhook and a retry from both firing the event.
+    if not db.execute(
+        "UPDATE sessions SET rescue_told_at = ? WHERE id = ? AND rescue_pending IS NOT NULL"
+        " AND rescue_told_at IS NULL AND rescue_ended_at IS NULL",
+        time.time(), session_id,
+    ):
+        return False
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
+    pending = json.loads(session["rescue_pending"])
+    try:
+        await rt.bolna.fire_event(session["rescue_run_id"], pending["event"], pending["properties"])
+    except Exception:
+        db.execute("UPDATE sessions SET rescue_told_at = NULL WHERE id = ?", session_id)
+        log.info("rescue call not connected yet session=%s event=%s", session_id, pending["event"])
+        return False
+    log.info("rescue told session=%s event=%s", session_id, pending["event"])
+    return True
+
+
+async def keep_telling_rescue(session_id: str) -> None:
+    # Bolna rejects events until the contact picks up, and the in-progress webhook can be missed.
+    for _ in range(RESCUE_RETRIES):
+        await asyncio.sleep(RESCUE_RETRY_S)
+        session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
+        if session["rescue_told_at"] or not rescue_live(session) or await deliver_rescue(session_id):
+            return
+
+
+async def check_on_rescue(session_id: str, order: list[dict]) -> bool:
+    """Routes a family claim through the live rescue call; True means don't dial now."""
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
+    if not rescue_live(session) or not order:
+        return False
+    family = db.one("SELECT parent_name, language FROM families WHERE id = ?", session["family_id"])
+    claimed = session["claimed_name"] or order[0]["name"]
+    if order[0]["priority"] != session["rescue_priority"]:
+        # The claimed person is dialled once the rescue call ends, so two family calls never overlap.
+        return await tell_rescue(session_id, "rescue_update", rescue_story(session, family, "update_other"))
+    db.execute("UPDATE sessions SET check_run_id = rescue_run_id, contact_priority = rescue_priority WHERE id = ?", session_id)
+    verify = {
+        "verify_line": greeting(family["language"], "verify", parent_name=family["parent_name"], claimed_name=claimed),
+        "claimed_name": claimed,
+        "amount_asked": session["amount"] or 0,
+    }
+    if await tell_rescue(session_id, "rescue_verify", verify):
+        return True
+    db.execute("UPDATE sessions SET check_run_id = NULL, contact_priority = NULL WHERE id = ?", session_id)
+    return False
 
 
 def summary_text(session: dict, family: dict) -> str:
@@ -332,7 +450,6 @@ class FamilyIn(BaseModel):
 class TriggerIn(BaseModel):
     family_id: str = Field(max_length=40)
     drill_id: int | None = None
-    delay_s: int = Field(0, ge=0, le=CALLBACK_DELAY_MAX_S)
 
 
 @app.get("/")
@@ -408,28 +525,19 @@ async def trigger(body: TriggerIn):
     if drill_id:
         db.execute("UPDATE drills SET used_line = 1, stack = ? WHERE id = ?", stack, drill_id)
 
-    if body.delay_s:
-        rt.spawn(call_parent(session_id, family, agent_id, body.delay_s))
-        return {"session_id": session_id, "delay_s": body.delay_s}
-    if not await call_parent(session_id, family, agent_id, 0):
-        raise HTTPException(502, "Could not place the call")
-    return {"session_id": session_id}
-
-
-async def call_parent(session_id: str, family: dict, agent_id: str, delay: float) -> bool:
-    # The delay lets a parent still on the scam call hang up before Saathi rings.
-    if delay:
-        await asyncio.sleep(delay)
     try:
         run_id = await rt.bolna.place_call(agent_id, family["parent_phone"], parent_user_data(session_id, family))
     except Exception as exc:
         log.exception("parent call failed session=%s", session_id)
         if not isinstance(exc, MAYBE_SENT):
             db.execute("UPDATE sessions SET parent_ended_at = ? WHERE id = ?", time.time(), session_id)
-        return False
+        raise HTTPException(502, "Could not place the call")
     db.execute("UPDATE sessions SET parent_run_id = ? WHERE id = ?", run_id, session_id)
-    log.info("session started id=%s run=%s delay=%s", session_id, run_id, delay)
-    return True
+    log.info("session started id=%s stack=%s drill=%s run=%s", session_id, stack, drill_id, run_id)
+    # Drills are timed rehearsals, so they leave the family's phones alone.
+    if rescue_enabled() and not drill_id:
+        rt.spawn(start_rescue(session_id))
+    return {"session_id": session_id}
 
 
 @app.post("/tools/start_verification", dependencies=[Depends(require_secret)])
@@ -451,8 +559,9 @@ async def start_verification(request: Request):
         log.info("start_verification repeat ignored session=%s", session["id"])
         return {"calling": current["name"] if current else calling}
 
-    rt.timers[session["id"]] = rt.spawn(verdict_timeout(session["id"], verdict_timeout_s()))
-    rt.spawn(dial(session["id"], 0))
+    arm_timer(session["id"])
+    if not await check_on_rescue(session["id"], order):
+        rt.spawn(dial(session["id"], 0))
     return {"calling": calling}
 
 
@@ -464,6 +573,31 @@ async def alert_family(request: Request):
     started = await start_alert(session["id"], claim if claim in ALERT_CLAIMS else "authority")
     order = contact_order(family_contacts(session["family_id"]), session["claimed_name"])
     return {"alerting": order[0]["name"] if order and (started or session["alert_started_at"]) else ""}
+
+
+@app.post("/tools/retry_family", dependencies=[Depends(require_secret)])
+async def retry_family(request: Request):
+    data = await payload(request)
+    session = get_session(clean(data.get("session_id")))
+    now = time.time()
+    if db.execute(
+        "UPDATE sessions SET verdict = NULL, verdict_at = NULL, verification_started_at = ?, retried_at = ?, check_run_id = NULL"
+        " WHERE id = ? AND verdict = ? AND retried_at IS NULL",
+        now, now, session["id"], NOT_CONFIRMED,
+    ):
+        log.info("retrying family session=%s", session["id"])
+        arm_timer(session["id"])
+        rt.spawn(dial(session["id"], 0))
+        order = contact_order(family_contacts(session["family_id"]), session["claimed_name"])
+        return {"calling": order[0]["name"] if order else ""}
+    # Saathi is now waiting for a verdict event, so repeat the one already given rather than leave her hanging.
+    verdict = session["verdict"] or (None if session["verification_started_at"] else NOT_CONFIRMED)
+    if verdict and session["parent_run_id"]:
+        try:
+            await rt.bolna.fire_event(session["parent_run_id"], verdict, {})
+        except Exception:
+            log.exception("fire_event failed session=%s event=%s", session["id"], verdict)
+    return {"calling": ""}
 
 
 @app.post("/tools/report_verdict", dependencies=[Depends(require_secret)])
@@ -482,7 +616,7 @@ async def report_verdict(request: Request):
 @app.post("/webhooks/bolna")
 async def bolna_webhook(request: Request):
     run_id = clean((await payload(request)).get("id"))
-    session = db.one("SELECT * FROM sessions WHERE check_run_id = ? OR parent_run_id = ?", run_id, run_id) if run_id else None
+    session = db.one("SELECT * FROM sessions WHERE check_run_id = ? OR parent_run_id = ? OR rescue_run_id = ?", run_id, run_id, run_id) if run_id else None
     if not session:
         return {"ok": True}
     # Bolna webhooks are unsigned, so act only on the execution as Bolna's API reports it.
@@ -492,12 +626,28 @@ async def bolna_webhook(request: Request):
         log.exception("get_execution failed run=%s", run_id)
         return {"ok": False}
     status = (clean(data.get("status")) or "").lower()
+    breach = guardrail_breach(data)
+    if breach:
+        log.warning("guardrail breach session=%s run=%s rule=%s", session["id"], run_id, breach)
     session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
+    if session["rescue_run_id"] == run_id:
+        await on_rescue_status(session, run_id, status, data)
+        session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
     if session["check_run_id"] == run_id:
         await on_check_status(session, run_id, status, data)
     elif session["parent_run_id"] == run_id and status in PARENT_ENDED:
-        await on_parent_ended(session, data)
+        await on_parent_ended(session, status, data)
     return {"ok": True}
+
+
+def guardrail_breach(data: dict) -> str | None:
+    # Set by the guardrail_breach disposition in each agent's Safety_Audit category, once Bolna's post-call pass runs.
+    for source in (data.get("custom_extractions"), data.get("extracted_data")):
+        audit = source.get("Safety_Audit") if isinstance(source, dict) else None
+        rule = ((audit or {}).get("guardrail_breach") or {}).get("objective")
+        if rule and rule not in {"None", "NA"}:
+            return rule
+    return None
 
 
 def not_answered(status: str, data: dict) -> bool:
@@ -523,7 +673,33 @@ async def on_check_status(session: dict, run_id: str, status: str, data: dict) -
     await dial(session["id"], index + 1)
 
 
-async def on_parent_ended(session: dict, data: dict) -> None:
+async def on_rescue_status(session: dict, run_id: str, status: str, data: dict) -> None:
+    if status == "in-progress":
+        await deliver_rescue(session["id"])
+        return
+    unreached = not_answered(status, data)
+    if not (unreached or status in CHECK_FINAL):
+        return
+    if not db.execute("UPDATE sessions SET rescue_ended_at = ? WHERE id = ? AND rescue_run_id = ? AND rescue_ended_at IS NULL",
+                      time.time(), session["id"], run_id):
+        return
+    session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
+    if session["verdict"] or session["check_run_id"] == run_id:
+        return
+    if session["verification_started_at"] and not session["check_run_id"]:
+        log.info("rescue call over, checking the claimed contact session=%s", session["id"])
+        arm_timer(session["id"])
+        await dial(session["id"], 0)
+    elif unreached and session["alert_started_at"]:
+        order = contact_order(family_contacts(session["family_id"]), session["claimed_name"])
+        index = next((i for i, c in enumerate(order) if c["priority"] == session["rescue_priority"]), -1)
+        await dial(session["id"], index + 1)
+    elif unreached and not session["verification_started_at"]:
+        log.info("rescue call unreached session=%s status=%s priority=%s", session["id"], status, session["rescue_priority"])
+        await start_rescue(session["id"], session["rescue_priority"])
+
+
+async def on_parent_ended(session: dict, status: str, data: dict) -> None:
     if not db.execute(
         "UPDATE sessions SET parent_ended_at = ?, claim_type = COALESCE(claim_type, ?) WHERE id = ? AND parent_ended_at IS NULL",
         time.time(), claim_from_execution(data), session["id"],
@@ -532,6 +708,10 @@ async def on_parent_ended(session: dict, data: dict) -> None:
     session = db.one("SELECT * FROM sessions WHERE id = ?", session["id"])
     if session["claim_type"] in ALERT_CLAIMS and not session["alert_started_at"]:
         await start_alert(session["id"], session["claim_type"])
+    elif not (session["verification_started_at"] or session["alert_started_at"]):
+        family = db.one("SELECT parent_name, language FROM families WHERE id = ?", session["family_id"])
+        kind = "update_unreachable" if not_answered(status, data) else "update_left"
+        await tell_rescue(session["id"], "rescue_update", rescue_story(session, family, kind))
     if session["drill_id"] and not session["verification_started_at"]:
         record_drill(session["drill_id"], session["claim_type"], None)
     if session["verdict"] or not session["verification_started_at"]:

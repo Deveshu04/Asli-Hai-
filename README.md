@@ -8,7 +8,7 @@ Parents over 55 whose children live in another city get calls like "Papa, accide
 
 ## How it works
 
-Two Bolna graph agents and a small backend. The parent never hangs up.
+Two Bolna graph agents and a small backend. One press starts two calls at once: Saathi calls the parent, and a rescue call goes to the first family contact. The parent doesn't have to hang up on the scammer first, and someone they trust hears about it straight away.
 
 ```mermaid
 sequenceDiagram
@@ -18,25 +18,33 @@ sequenceDiagram
     participant C as Family check
     participant F as Family member
     P->>B: taps the button
-    B->>S: place call
-    S->>P: "Who called, and what did they ask for?"
-    S->>B: start_verification
-    B->>C: place call
+    par two calls at once
+        B->>S: call the parent
+        S->>P: "Take your time and tell me, what happened?"
+    and
+        B->>C: rescue call to the first contact
+        C->>F: "Sunita ji just pressed the button. Please stay on the line."
+    end
+    S->>B: start_verification (who, how much)
+    B->>C: story event into the rescue call
     C->>F: "Did you just call asking for money?"
     F->>C: "No" (or "Yes" plus the family word)
     C->>B: report_verdict
     B->>S: verdict event into the live call
     S->>P: "Woh call nakli tha. Koi paisa mat dijiye."
-    B-->>F: WhatsApp summary
+    C->>F: "Please give them a call yourself too."
 ```
 
-1. The parent taps `tap.html`. The page asks them to hang up the other call, and 15 seconds later the backend calls them with Saathi, the parent-line agent.
-2. Saathi finds out in two questions who called, what they asked for and how much.
-3. For a family claim, Saathi calls `start_verification`. The backend calls the matching registered contact with the family-check agent while the parent waits.
+1. The parent taps `tap.html`. The backend calls them with Saathi, the parent-line agent. At the same moment it places a rescue call to the first family contact, who hears that the parent pressed the button and is asked to stay on the line.
+2. Saathi lets the parent tell it in their own words. She acknowledges what she heard and asks one short question at a time, only about what's still missing: who called, what they asked for, how much, and whether anything went.
+3. For a family claim, Saathi calls `start_verification`, and the backend pushes the story into the rescue call as a Bolna event.
+   - If the caller claimed to be that contact, they're checked right there on the same call.
+   - If the caller claimed to be someone else, the rescue contact hears what happened. Once that call ends, the claimed person gets the check call, so two family calls never overlap.
 4. The family member is asked one yes/no question. "No" settles it. "Yes" unlocks money, so it also needs the family word.
-5. The backend decides the verdict and fires it into the parent's live call as a Bolna event. A static node plays it in about 50 ms.
-6. Police, CBI, TRAI, courier or bank claims get a fixed message: there is no such thing as a "digital arrest", hang up, don't pay. If money already went, Saathi reads out 1930, the cybercrime helpline. Either way the backend rings the first family contact so someone calls the parent back, even if the parent hangs up early.
-7. The family gets a WhatsApp summary of what happened.
+5. The backend decides the verdict and fires it into the parent's live call as a Bolna event. A static node plays it in about 50 ms. The family member is asked to call the parent themselves too.
+6. Police, CBI, TRAI, courier or bank claims get a fixed message: there is no such thing as a "digital arrest", hang up, don't pay. If money already went, Saathi reads out 1930, the cybercrime helpline. The rescue call tells the family either way, and it also tells them if the parent couldn't take Saathi's call or hung up early.
+7. After the verdict Saathi keeps listening. She answers questions, can call the family once more if they couldn't be reached, and only says goodbye when the parent is done.
+8. The family gets a WhatsApp summary of what happened.
 
 ## Safety by design
 
@@ -48,6 +56,16 @@ sequenceDiagram
   - Anything else, every contact unreachable, or 75 seconds gone → `not_confirmed`, which tells the parent not to pay until they reach the family themselves.
 - **No answer means the next contact.** Unanswered, busy or voicemail calls move on to the next registered contact.
 - **One verdict per session.** Repeated tool calls are ignored. Webhooks are unsigned, so the backend re-reads each call's status from Bolna's API before acting on it.
+- **Guardrails.** Both agents carry a short list of rules they never break:
+  - no promise that money comes back;
+  - never ask for an OTP, PIN, card or account number, or the family word;
+  - never pose as police, a bank or an officer;
+  - no legal advice beyond the official facts;
+  - stay on the scam.
+
+  Safety lines can't be talked over. A post-call audit, the `guardrail_breach` disposition, checks every transcript, and the backend logs any call it flags.
+- **Several people, one setup.** A family member can protect a mother, a father and a sister from the same phone. Each gets their own button link, and the signup page lists everyone set up on that phone.
+- **Two calls at once.** The rescue call needs a Bolna account that allows at least 2 concurrent calls. Set `RESCUE_CALLS=off` to go back to one call at a time.
 
 ## Accessibility
 

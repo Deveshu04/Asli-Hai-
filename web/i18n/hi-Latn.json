@@ -120,6 +120,8 @@
   "signup.step1": "Mata-pita ke phone par yeh link Chrome mein kholiye.",
   "signup.step2": "Menu dabaiye, phir “Add to Home screen” chuniye.",
   "signup.step3": "Mata-pita ko bataiye: call par kisi ko bhi paise dene se pehle, peela button dabaiye.",
+  "signup.profiles": "Is phone se jode gaye log",
+  "signup.addAnother": "Kisi aur ko jodiye",
   "err.required": "Yeh bhariye.",
   "err.phone": "10 digit ka Indian mobile number likhiye.",
   "err.contactPair": "Is vyakti ka mobile number likhiye, ya naam hata dijiye.",

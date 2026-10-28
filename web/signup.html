@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body class="onboarding">
   <a class="skip" href="#main" data-i18n="skip.form">Skip to the form</a>
@@ -176,10 +176,16 @@
         <li data-i18n="signup.step2">Tap the menu, then “Add to Home screen”.</li>
         <li data-i18n="signup.step3">Tell your parent: before paying anyone who calls, press the yellow button.</li>
       </ol>
+      <button id="add-another" class="button secondary" type="button" data-i18n="signup.addAnother">Add another person</button>
+    </section>
+
+    <section id="profiles-box" class="ob-card profiles" hidden aria-labelledby="profiles-title">
+      <h2 id="profiles-title" data-i18n="signup.profiles">Everyone you've set up on this phone</h2>
+      <ul id="profiles"></ul>
     </section>
   </main>
 
-  <script src="site.js?v=4"></script>
+  <script src="site.js?v=5"></script>
   <script>
     const LANGS = {
       hi: { native: "हिंदी", script: /[ऀ-ॿ]/, sample: "आम रस" },
@@ -214,6 +220,8 @@
     let formMessage = null;
     let callLang = null;
     let copied = false;
+    // Only names and button links, so nothing private is left on a shared phone.
+    const PROFILES_KEY = "asli-profiles";
 
     const isPhone = (raw) => {
       let digits = raw.replace(/\D/g, "");
@@ -305,6 +313,41 @@
       }));
     }
 
+    function loadProfiles() {
+      try {
+        const list = JSON.parse(localStorage.getItem(PROFILES_KEY) || "[]");
+        return Array.isArray(list) ? list.filter((p) => p && p.name && p.url) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveProfile(profile) {
+      const list = [profile, ...loadProfiles().filter((p) => p.url !== profile.url)];
+      try { localStorage.setItem(PROFILES_KEY, JSON.stringify(list)); } catch {}
+    }
+
+    function paintProfiles() {
+      const list = loadProfiles();
+      const box = document.getElementById("profiles-box");
+      box.hidden = !list.length || !(step === 0 || !document.getElementById("done").hidden);
+      document.getElementById("profiles").replaceChildren(...list.map((profile) => {
+        const item = document.createElement("li");
+        const link = Object.assign(document.createElement("a"), { href: profile.url, textContent: profile.name });
+        const copy = Object.assign(document.createElement("button"), { type: "button", className: "ob-change", textContent: t("signup.copy") });
+        copy.setAttribute("aria-label", `${t("signup.copy")}: ${profile.name}`);
+        copy.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(profile.url);
+            copy.textContent = t("signup.copied");
+            document.getElementById("copy-status").textContent = t("signup.copied");
+          } catch {}
+        });
+        item.append(link, copy);
+        return item;
+      }));
+    }
+
     function paint() {
       const name = STEPS[step];
       const counted = STEPS.length - 1;
@@ -319,6 +362,7 @@
       paintErrors();
       if (name === "review") paintReview();
       copyBtn.textContent = t(copied ? "signup.copied" : "signup.copy");
+      paintProfiles();
     }
 
     function validate(name) {
@@ -393,8 +437,11 @@
         if (res.status === 409) return fail({ parent_phone: "duplicate" }, null, STEPS.indexOf("parentPhone"));
         if (!res.ok) return fail({}, "server");
         form.hidden = true;
-        document.getElementById("tap-link").value = new URL(body.tap_url, location.href).href;
+        const url = new URL(body.tap_url, location.href).href;
+        document.getElementById("tap-link").value = url;
+        saveProfile({ name: val("parent_name"), url });
         document.getElementById("done").hidden = false;
+        paintProfiles();
         document.getElementById("done-title").focus();
       } catch (err) {
         fail({}, "network");
@@ -413,6 +460,15 @@
     });
 
     backBtn.addEventListener("click", () => go(step - 1));
+
+    // Contacts, language, family word and invite code stay filled in; only the new person's details are cleared.
+    document.getElementById("add-another").addEventListener("click", () => {
+      ["parent_name", "parent_phone"].forEach((id) => { document.getElementById(id).value = ""; });
+      copied = false;
+      document.getElementById("done").hidden = true;
+      form.hidden = false;
+      go(STEPS.indexOf("parentName"));
+    });
 
     skipBtn.addEventListener("click", () => {
       if (STEPS[step] === "second") ["c2_name", "c2_phone"].forEach((id) => { document.getElementById(id).value = ""; });

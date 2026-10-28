@@ -3,62 +3,62 @@ import re
 LANGUAGES = {
     "hi": {
         "name": "Hindi", "native": "हिंदी", "script": "ऀ-ॿ",
-        "parent": "नमस्ते {parent_name} जी, मैं साथी, असली है से बोल रही हूँ। अभी आपको किसने कॉल किया था, और वो क्या माँग रहे थे?",
+        "parent": "नमस्ते {parent_name} जी, मैं साथी, असली है से बोल रही हूँ। आराम से बताइए, क्या हुआ?",
         "check": "नमस्ते {child_name}, मैं साथी, असली है से बोल रही हूँ, {parent_name} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {claimed_name} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
     },
     "en": {
         "name": "English", "native": "English", "script": None,
-        "parent": "Namaste {parent_name} ji, I'm Saathi, speaking from Asli hai. Who called you just now, and what were they asking for?",
+        "parent": "Namaste {parent_name} ji, I'm Saathi, speaking from Asli hai. Take your time and tell me, what happened?",
         "check": "Namaste {child_name}, I'm Saathi, speaking from Asli hai, {parent_name} ji's safety line. {parent_name} ji just got a call where someone pretended to be {claimed_name} and asked for money. Did you just call them?",
     },
     "bn": {
         "name": "Bengali", "native": "বাংলা", "script": "ঀ-৿",
-        "parent": "নমস্কার {parent_name}, আমি সাথী, আসলি হ্যায় থেকে বলছি। এইমাত্র আপনাকে কে ফোন করেছিল, আর তারা কী চাইছিল?",
+        "parent": "নমস্কার {parent_name}, আমি সাথী, আসলি হ্যায় থেকে বলছি। ধীরে সুস্থে বলুন, কী হয়েছে?",
         "check": "নমস্কার {child_name}, আমি সাথী, আসলি হ্যায় থেকে বলছি, {parent_name}-এর সুরক্ষা লাইন। এইমাত্র ওনার কাছে একটা ফোন এসেছিল, যেখানে কেউ {claimed_name} সেজে টাকা চেয়েছে। আপনি কি এইমাত্র ওনাকে ফোন করেছিলেন?",
     },
     "mr": {
         "name": "Marathi", "native": "मराठी", "script": "ऀ-ॿ",
-        "parent": "नमस्कार {parent_name} जी, मी साथी, असली है मधून बोलत आहे. आत्ता तुम्हाला कोणी फोन केला होता, आणि ते काय मागत होते?",
+        "parent": "नमस्कार {parent_name} जी, मी साथी, असली है मधून बोलत आहे. निवांत सांगा, काय झालं?",
         "check": "नमस्कार {child_name}, मी साथी, असली है मधून बोलत आहे, {parent_name} जी यांची सुरक्षा लाइन. आत्ताच त्यांना एक फोन आला, ज्यात कोणीतरी {claimed_name} बनून पैसे मागितले. तुम्ही आत्ता त्यांना फोन केला होता का?",
     },
     "te": {
         "name": "Telugu", "native": "తెలుగు", "script": "ఀ-౿",
-        "parent": "నమస్తే {parent_name} గారు, నేను సాథీ, అస్లీ హై నుండి మాట్లాడుతున్నాను. ఇప్పుడే మీకు ఎవరు ఫోన్ చేశారు, వాళ్ళు ఏమి అడిగారు?",
+        "parent": "నమస్తే {parent_name} గారు, నేను సాథీ, అస్లీ హై నుండి మాట్లాడుతున్నాను. నెమ్మదిగా చెప్పండి, ఏమి జరిగింది?",
         "check": "నమస్తే {child_name}, నేను సాథీ, అస్లీ హై నుండి మాట్లాడుతున్నాను, {parent_name} గారి భద్రతా లైన్. ఇప్పుడే వారికి ఒక ఫోన్ వచ్చింది, అందులో ఎవరో {claimed_name} లాగా నటించి డబ్బు అడిగారు. మీరు ఇప్పుడే వారికి ఫోన్ చేశారా?",
     },
     "ta": {
         "name": "Tamil", "native": "தமிழ்", "script": "஀-௿",
-        "parent": "வணக்கம் {parent_name} அவர்களே, நான் சாத்தி, அஸ்லி ஹை-யிலிருந்து பேசுகிறேன். இப்போது உங்களுக்கு யார் போன் செய்தார்கள், அவர்கள் என்ன கேட்டார்கள்?",
+        "parent": "வணக்கம் {parent_name} அவர்களே, நான் சாத்தி, அஸ்லி ஹை-யிலிருந்து பேசுகிறேன். நிதானமாகச் சொல்லுங்கள், என்ன நடந்தது?",
         "check": "வணக்கம் {child_name}, நான் சாத்தி, அஸ்லி ஹை-யிலிருந்து பேசுகிறேன், {parent_name} அவர்களின் பாதுகாப்பு லைன். இப்போது அவர்களுக்கு ஒரு அழைப்பு வந்தது, அதில் யாரோ {claimed_name} போல நடித்து பணம் கேட்டார்கள். நீங்கள் இப்போது அவர்களுக்கு போன் செய்தீர்களா?",
     },
     "gu": {
         "name": "Gujarati", "native": "ગુજરાતી", "script": "઀-૿",
-        "parent": "નમસ્તે {parent_name} જી, હું સાથી, અસલી હૈ તરફથી બોલી રહી છું. હમણાં તમને કોણે ફોન કર્યો હતો, અને તેઓ શું માંગી રહ્યા હતા?",
+        "parent": "નમસ્તે {parent_name} જી, હું સાથી, અસલી હૈ તરફથી બોલી રહી છું. શાંતિથી કહો, શું થયું?",
         "check": "નમસ્તે {child_name}, હું સાથી, અસલી હૈ તરફથી બોલી રહી છું, {parent_name} જીની સુરક્ષા લાઇન. હમણાં જ તેમને એક ફોન આવ્યો, જેમાં કોઈએ {claimed_name} બનીને પૈસા માંગ્યા. શું તમે હમણાં તેમને ફોન કર્યો હતો?",
     },
     "kn": {
         "name": "Kannada", "native": "ಕನ್ನಡ", "script": "ಀ-೿",
-        "parent": "ನಮಸ್ಕಾರ {parent_name} ಅವರೇ, ನಾನು ಸಾಥಿ, ಅಸ್ಲಿ ಹೈ ಇಂದ ಮಾತನಾಡುತ್ತಿದ್ದೇನೆ. ಈಗ ನಿಮಗೆ ಯಾರು ಫೋನ್ ಮಾಡಿದ್ದರು, ಮತ್ತು ಅವರು ಏನು ಕೇಳುತ್ತಿದ್ದರು?",
+        "parent": "ನಮಸ್ಕಾರ {parent_name} ಅವರೇ, ನಾನು ಸಾಥಿ, ಅಸ್ಲಿ ಹೈ ಇಂದ ಮಾತನಾಡುತ್ತಿದ್ದೇನೆ. ನಿಧಾನವಾಗಿ ಹೇಳಿ, ಏನಾಯಿತು?",
         "check": "ನಮಸ್ಕಾರ {child_name}, ನಾನು ಸಾಥಿ, ಅಸ್ಲಿ ಹೈ ಇಂದ ಮಾತನಾಡುತ್ತಿದ್ದೇನೆ, {parent_name} ಅವರ ಸುರಕ್ಷತಾ ಲೈನ್. ಈಗ ತಾನೇ ಅವರಿಗೆ ಒಂದು ಕರೆ ಬಂತು, ಅದರಲ್ಲಿ ಯಾರೋ {claimed_name} ಎಂದು ನಟಿಸಿ ಹಣ ಕೇಳಿದರು. ನೀವು ಈಗ ಅವರಿಗೆ ಫೋನ್ ಮಾಡಿದ್ದೀರಾ?",
     },
     "ml": {
         "name": "Malayalam", "native": "മലയാളം", "script": "ഀ-ൿ",
-        "parent": "നമസ്കാരം {parent_name}, ഞാൻ സാഥി, അസ്‌ലി ഹൈയിൽ നിന്നാണ് സംസാരിക്കുന്നത്. ഇപ്പോൾ നിങ്ങളെ ആരാണ് വിളിച്ചത്, അവർ എന്താണ് ചോദിച്ചത്?",
+        "parent": "നമസ്കാരം {parent_name}, ഞാൻ സാഥി, അസ്‌ലി ഹൈയിൽ നിന്നാണ് സംസാരിക്കുന്നത്. സാവധാനം പറയൂ, എന്താണ് സംഭവിച്ചത്?",
         "check": "നമസ്കാരം {child_name}, ഞാൻ സാഥി, അസ്‌ലി ഹൈയിൽ നിന്നാണ് സംസാരിക്കുന്നത്, {parent_name}-ന്റെ സുരക്ഷാ ലൈൻ. ഇപ്പോൾ അവർക്ക് ഒരു കോൾ വന്നു, അതിൽ ആരോ {claimed_name} ആയി അഭിനയിച്ച് പണം ചോദിച്ചു. നിങ്ങൾ ഇപ്പോൾ അവരെ വിളിച്ചിരുന്നോ?",
     },
     "pa": {
         "name": "Punjabi", "native": "ਪੰਜਾਬੀ", "script": "਀-੿",
-        "parent": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ {parent_name} ਜੀ, ਮੈਂ ਸਾਥੀ, ਅਸਲੀ ਹੈ ਤੋਂ ਬੋਲ ਰਹੀ ਹਾਂ। ਹੁਣੇ ਤੁਹਾਨੂੰ ਕਿਸ ਨੇ ਫ਼ੋਨ ਕੀਤਾ ਸੀ, ਅਤੇ ਉਹ ਕੀ ਮੰਗ ਰਹੇ ਸਨ?",
+        "parent": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ {parent_name} ਜੀ, ਮੈਂ ਸਾਥੀ, ਅਸਲੀ ਹੈ ਤੋਂ ਬੋਲ ਰਹੀ ਹਾਂ। ਆਰਾਮ ਨਾਲ ਦੱਸੋ, ਕੀ ਹੋਇਆ?",
         "check": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ {child_name}, ਮੈਂ ਸਾਥੀ, ਅਸਲੀ ਹੈ ਤੋਂ ਬੋਲ ਰਹੀ ਹਾਂ, {parent_name} ਜੀ ਦੀ ਸੁਰੱਖਿਆ ਲਾਈਨ। ਹੁਣੇ ਉਨ੍ਹਾਂ ਨੂੰ ਇੱਕ ਫ਼ੋਨ ਆਇਆ, ਜਿਸ ਵਿੱਚ ਕਿਸੇ ਨੇ {claimed_name} ਬਣ ਕੇ ਪੈਸੇ ਮੰਗੇ। ਕੀ ਤੁਸੀਂ ਹੁਣੇ ਉਨ੍ਹਾਂ ਨੂੰ ਫ਼ੋਨ ਕੀਤਾ ਸੀ?",
     },
     "od": {
         "name": "Odia", "native": "ଓଡ଼ିଆ", "script": "଀-୿",
-        "parent": "ନମସ୍କାର {parent_name}, ମୁଁ ସାଥୀ, ଅସଲି ହୈ ତରଫରୁ କହୁଛି। ଏବେ ଆପଣଙ୍କୁ କିଏ ଫୋନ କରିଥିଲା, ଆଉ ସେମାନେ କ'ଣ ମାଗୁଥିଲେ?",
+        "parent": "ନମସ୍କାର {parent_name}, ମୁଁ ସାଥୀ, ଅସଲି ହୈ ତରଫରୁ କହୁଛି। ଧୀରେ ଧୀରେ କୁହନ୍ତୁ, କ'ଣ ହେଲା?",
         "check": "ନମସ୍କାର {child_name}, ମୁଁ ସାଥୀ, ଅସଲି ହୈ ତରଫରୁ କହୁଛି, {parent_name}ଙ୍କ ସୁରକ୍ଷା ଲାଇନ। ଏବେ ତାଙ୍କୁ ଗୋଟିଏ ଫୋନ ଆସିଥିଲା, ଯେଉଁଥିରେ କେହି {claimed_name} ସାଜି ଟଙ୍କା ମାଗିଲେ। ଆପଣ କ'ଣ ଏବେ ତାଙ୍କୁ ଫୋନ କରିଥିଲେ?",
     },
     "as": {
         "name": "Assamese", "native": "অসমীয়া", "script": "ঀ-৿",
-        "parent": "নমস্কাৰ {parent_name}, মই সাথী, অসলী হৈ-ৰ পৰা কৈছোঁ। এইমাত্ৰ আপোনাক কোনে ফোন কৰিছিল, আৰু তেওঁলোকে কি বিচাৰিছিল?",
+        "parent": "নমস্কাৰ {parent_name}, মই সাথী, অসলী হৈ-ৰ পৰা কৈছোঁ। লাহে লাহে কওক, কি হ'ল?",
         "check": "নমস্কাৰ {child_name}, মই সাথী, অসলী হৈ-ৰ পৰা কৈছোঁ, {parent_name}ৰ সুৰক্ষা লাইন। এইমাত্ৰ তেওঁলৈ এটা ফোন আহিছিল, য'ত কোনোবাই {claimed_name} সাজি টকা বিচাৰিছিল। আপুনি এইমাত্ৰ তেওঁক ফোন কৰিছিল নেকি?",
     },
 }
@@ -113,3 +113,110 @@ for _code, (_authority, _paid) in ALERTS.items():
     _lead = _intro(LANGUAGES[_code]["check"])
     LANGUAGES[_code]["alert_authority"] = f"{_lead} {_authority}"
     LANGUAGES[_code]["alert_paid"] = f"{_lead} {_paid}"
+
+
+# The rescue call to the first contact; "rescue" follows the check greeting's opening line.
+RESCUE = {
+    "hi": {
+        "rescue": "{parent_name} जी ने अभी असली है का बटन दबाया है। हो सकता है उन्हें कोई ठगी का कॉल आया हो। मैं अभी उनसे पता कर रही हूँ कि क्या हुआ, कृपया लाइन पर बने रहिए।",
+        "update_other": "{parent_name} जी को अभी एक कॉल आया, जिसमें किसी ने {claimed_name} बनकर {asked} माँगे। हम {claimed_name} से पक्का कर रहे हैं।",
+        "update_left": "{parent_name} जी ने हमारा कॉल बीच में ही काट दिया, इसलिए पूरी बात पता नहीं चल पाई।",
+        "update_unreachable": "{parent_name} जी हमारा कॉल नहीं उठा पाए। हो सकता है वो अभी भी उसी कॉल पर हों।",
+        "money": "पैसे",
+    },
+    "en": {
+        "rescue": "{parent_name} ji just pressed the Asli hai button. They may have got a scam call. I'm finding out from them what happened, so please stay on the line.",
+        "update_other": "{parent_name} ji just got a call where someone pretended to be {claimed_name} and asked for {asked}. We are checking with {claimed_name} now.",
+        "update_left": "{parent_name} ji ended our call partway, so we couldn't find out everything.",
+        "update_unreachable": "{parent_name} ji couldn't take our call. They may still be on that call.",
+        "money": "money",
+    },
+    "bn": {
+        "rescue": "{parent_name} এইমাত্র আসলি হ্যায়-এর বোতাম টিপেছেন। হয়তো ওনার কাছে কোনো প্রতারণার ফোন এসেছে। আমি এখন ওনার কাছ থেকে জানছি কী হয়েছে, দয়া করে লাইনে থাকুন।",
+        "update_other": "এইমাত্র {parent_name}-এর কাছে একটা ফোন এসেছিল, যেখানে কেউ {claimed_name} সেজে {asked} চেয়েছে। আমরা {claimed_name}-এর সঙ্গে যাচাই করছি।",
+        "update_left": "{parent_name} মাঝপথেই আমাদের ফোনটা কেটে দিয়েছেন, তাই পুরো ব্যাপারটা জানা যায়নি।",
+        "update_unreachable": "{parent_name} আমাদের ফোন ধরতে পারেননি। হয়তো উনি এখনও সেই ফোনেই আছেন।",
+        "money": "টাকা",
+    },
+    "mr": {
+        "rescue": "{parent_name} जी यांनी आत्ताच असली है चे बटण दाबले आहे. कदाचित त्यांना फसवणुकीचा फोन आला असेल. काय झाले ते मी आत्ता त्यांच्याकडून जाणून घेत आहे, कृपया लाइनवर थांबा.",
+        "update_other": "आत्ताच {parent_name} जी यांना एक फोन आला, ज्यात कोणीतरी {claimed_name} बनून {asked} मागितले. आम्ही {claimed_name} यांच्याकडून खात्री करत आहोत.",
+        "update_left": "{parent_name} जी यांनी आमचा फोन मध्येच ठेवला, त्यामुळे पूर्ण माहिती मिळाली नाही.",
+        "update_unreachable": "{parent_name} जी आमचा फोन उचलू शकले नाहीत. कदाचित ते अजूनही त्याच फोनवर असतील.",
+        "money": "पैसे",
+    },
+    "te": {
+        "rescue": "{parent_name} గారు ఇప్పుడే అస్లీ హై బటన్ నొక్కారు. వారికి మోసపు ఫోన్ వచ్చి ఉండవచ్చు. ఏమి జరిగిందో నేను ఇప్పుడు వారి నుండి తెలుసుకుంటున్నాను, దయచేసి లైన్‌లోనే ఉండండి.",
+        "update_other": "ఇప్పుడే {parent_name} గారికి ఒక ఫోన్ వచ్చింది, అందులో ఎవరో {claimed_name} లాగా నటించి {asked} అడిగారు. మేము {claimed_name} తో నిర్ధారించుకుంటున్నాం.",
+        "update_left": "{parent_name} గారు మా ఫోన్‌ను మధ్యలోనే కట్ చేశారు, అందుకే పూర్తి విషయం తెలియలేదు.",
+        "update_unreachable": "{parent_name} గారు మా ఫోన్ ఎత్తలేకపోయారు. వారు ఇంకా ఆ ఫోన్‌లోనే ఉండవచ్చు.",
+        "money": "డబ్బు",
+    },
+    "ta": {
+        "rescue": "{parent_name} அவர்கள் இப்போது அஸ்லி ஹை பட்டனை அழுத்தினார்கள். அவர்களுக்கு ஒரு மோசடி அழைப்பு வந்திருக்கலாம். என்ன நடந்தது என்று நான் இப்போது அவர்களிடம் கேட்டுக்கொண்டிருக்கிறேன், தயவுசெய்து லைனிலேயே இருங்கள்.",
+        "update_other": "இப்போது {parent_name} அவர்களுக்கு ஒரு அழைப்பு வந்தது, அதில் யாரோ {claimed_name} போல நடித்து {asked} கேட்டார்கள். நாங்கள் {claimed_name}-இடம் உறுதி செய்கிறோம்.",
+        "update_left": "{parent_name} அவர்கள் எங்கள் அழைப்பை பாதியிலேயே துண்டித்துவிட்டார்கள், அதனால் முழு விவரம் தெரியவில்லை.",
+        "update_unreachable": "{parent_name} அவர்களால் எங்கள் அழைப்பை எடுக்க முடியவில்லை. அவர்கள் இன்னும் அந்த அழைப்பிலேயே இருக்கலாம்.",
+        "money": "பணம்",
+    },
+    "gu": {
+        "rescue": "{parent_name} જીએ હમણાં જ અસલી હૈનું બટન દબાવ્યું છે. શક્ય છે કે તેમને છેતરપિંડીનો ફોન આવ્યો હોય. શું થયું તે હું હમણાં તેમની પાસેથી જાણી રહી છું, કૃપા કરીને લાઇન પર રહો.",
+        "update_other": "હમણાં જ {parent_name} જીને એક ફોન આવ્યો, જેમાં કોઈએ {claimed_name} બનીને {asked} માંગ્યા. અમે {claimed_name} પાસેથી ખાતરી કરી રહ્યા છીએ.",
+        "update_left": "{parent_name} જીએ અમારો ફોન વચ્ચે જ કાપી નાખ્યો, એટલે પૂરી વાત જાણી શકાઈ નહીં.",
+        "update_unreachable": "{parent_name} જી અમારો ફોન ઉપાડી શક્યા નહીં. શક્ય છે કે તેઓ હજી એ જ ફોન પર હોય.",
+        "money": "પૈસા",
+    },
+    "kn": {
+        "rescue": "{parent_name} ಅವರು ಈಗ ತಾನೇ ಅಸ್ಲಿ ಹೈ ಬಟನ್ ಒತ್ತಿದ್ದಾರೆ. ಅವರಿಗೆ ವಂಚನೆಯ ಕರೆ ಬಂದಿರಬಹುದು. ಏನಾಯಿತು ಎಂದು ನಾನು ಈಗ ಅವರಿಂದ ತಿಳಿದುಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ, ದಯವಿಟ್ಟು ಲೈನ್‌ನಲ್ಲೇ ಇರಿ.",
+        "update_other": "ಈಗ ತಾನೇ {parent_name} ಅವರಿಗೆ ಒಂದು ಕರೆ ಬಂತು, ಅದರಲ್ಲಿ ಯಾರೋ {claimed_name} ಎಂದು ನಟಿಸಿ {asked} ಕೇಳಿದರು. ನಾವು {claimed_name} ಅವರೊಂದಿಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೇವೆ.",
+        "update_left": "{parent_name} ಅವರು ನಮ್ಮ ಕರೆಯನ್ನು ಮಧ್ಯದಲ್ಲೇ ಕಟ್ ಮಾಡಿದರು, ಹಾಗಾಗಿ ಪೂರ್ತಿ ವಿಷಯ ತಿಳಿಯಲಿಲ್ಲ.",
+        "update_unreachable": "{parent_name} ಅವರಿಗೆ ನಮ್ಮ ಕರೆ ಎತ್ತಲು ಆಗಲಿಲ್ಲ. ಅವರು ಇನ್ನೂ ಆ ಕರೆಯಲ್ಲೇ ಇರಬಹುದು.",
+        "money": "ಹಣ",
+    },
+    "ml": {
+        "rescue": "{parent_name} ഇപ്പോൾ അസ്‌ലി ഹൈ ബട്ടൺ അമർത്തി. അവർക്ക് ഒരു തട്ടിപ്പ് കോൾ വന്നിരിക്കാം. എന്താണ് സംഭവിച്ചതെന്ന് ഞാൻ ഇപ്പോൾ അവരോട് ചോദിച്ചറിയുകയാണ്, ദയവായി ലൈനിൽ തുടരുക.",
+        "update_other": "ഇപ്പോൾ {parent_name}-ന് ഒരു കോൾ വന്നു, അതിൽ ആരോ {claimed_name} ആയി അഭിനയിച്ച് {asked} ചോദിച്ചു. ഞങ്ങൾ {claimed_name}-നോട് ഉറപ്പിക്കുകയാണ്.",
+        "update_left": "{parent_name} ഞങ്ങളുടെ കോൾ ഇടയ്ക്ക് വെച്ച് കട്ട് ചെയ്തു, അതുകൊണ്ട് മുഴുവൻ കാര്യവും അറിയാൻ കഴിഞ്ഞില്ല.",
+        "update_unreachable": "{parent_name}-ന് ഞങ്ങളുടെ കോൾ എടുക്കാൻ കഴിഞ്ഞില്ല. അവർ ഇപ്പോഴും ആ കോളിൽ തന്നെ ആയിരിക്കാം.",
+        "money": "പണം",
+    },
+    "pa": {
+        "rescue": "{parent_name} ਜੀ ਨੇ ਹੁਣੇ ਅਸਲੀ ਹੈ ਦਾ ਬਟਨ ਦਬਾਇਆ ਹੈ। ਹੋ ਸਕਦਾ ਹੈ ਉਨ੍ਹਾਂ ਨੂੰ ਕੋਈ ਠੱਗੀ ਦਾ ਫ਼ੋਨ ਆਇਆ ਹੋਵੇ। ਮੈਂ ਹੁਣੇ ਉਨ੍ਹਾਂ ਤੋਂ ਪਤਾ ਕਰ ਰਹੀ ਹਾਂ ਕਿ ਕੀ ਹੋਇਆ, ਕਿਰਪਾ ਕਰਕੇ ਲਾਈਨ ਉੱਤੇ ਬਣੇ ਰਹੋ।",
+        "update_other": "ਹੁਣੇ {parent_name} ਜੀ ਨੂੰ ਇੱਕ ਫ਼ੋਨ ਆਇਆ, ਜਿਸ ਵਿੱਚ ਕਿਸੇ ਨੇ {claimed_name} ਬਣ ਕੇ {asked} ਮੰਗੇ। ਅਸੀਂ {claimed_name} ਤੋਂ ਪੱਕਾ ਕਰ ਰਹੇ ਹਾਂ।",
+        "update_left": "{parent_name} ਜੀ ਨੇ ਸਾਡਾ ਫ਼ੋਨ ਵਿੱਚ ਹੀ ਕੱਟ ਦਿੱਤਾ, ਇਸ ਲਈ ਪੂਰੀ ਗੱਲ ਪਤਾ ਨਹੀਂ ਲੱਗ ਸਕੀ।",
+        "update_unreachable": "{parent_name} ਜੀ ਸਾਡਾ ਫ਼ੋਨ ਨਹੀਂ ਚੁੱਕ ਸਕੇ। ਹੋ ਸਕਦਾ ਹੈ ਉਹ ਹਾਲੇ ਵੀ ਉਸੇ ਫ਼ੋਨ ਉੱਤੇ ਹੋਣ।",
+        "money": "ਪੈਸੇ",
+    },
+    "od": {
+        "rescue": "{parent_name} ଏବେ ଅସଲି ହୈ ବଟନ ଦବାଇଛନ୍ତି। ହୁଏତ ତାଙ୍କୁ କୌଣସି ଠକେଇ ଫୋନ ଆସିଛି। କ'ଣ ହେଲା ମୁଁ ଏବେ ତାଙ୍କଠାରୁ ଜାଣୁଛି, ଦୟାକରି ଲାଇନରେ ରୁହନ୍ତୁ।",
+        "update_other": "ଏବେ {parent_name}ଙ୍କୁ ଗୋଟିଏ ଫୋନ ଆସିଥିଲା, ଯେଉଁଥିରେ କେହି {claimed_name} ସାଜି {asked} ମାଗିଲେ। ଆମେ {claimed_name}ଙ୍କ ସହ ନିଶ୍ଚିତ କରୁଛୁ।",
+        "update_left": "{parent_name} ଆମ ଫୋନକୁ ମଝିରେ କାଟିଦେଲେ, ତେଣୁ ପୂରା କଥା ଜଣାପଡ଼ିଲା ନାହିଁ।",
+        "update_unreachable": "{parent_name} ଆମ ଫୋନ ଉଠାଇ ପାରିଲେ ନାହିଁ। ହୁଏତ ସେ ଏବେ ବି ସେହି ଫୋନରେ ଅଛନ୍ତି।",
+        "money": "ଟଙ୍କା",
+    },
+    "as": {
+        "rescue": "{parent_name}এ এইমাত্ৰ অসলী হৈ-ৰ বুটাম টিপিছে। হয়তো তেওঁলৈ কোনো প্ৰতাৰণাৰ ফোন আহিছে। কি হ'ল মই এতিয়া তেওঁৰ পৰা জানি আছোঁ, অনুগ্ৰহ কৰি লাইনত থাকক।",
+        "update_other": "এইমাত্ৰ {parent_name}লৈ এটা ফোন আহিছিল, য'ত কোনোবাই {claimed_name} সাজি {asked} বিচাৰিছিল। আমি {claimed_name}ৰ সৈতে নিশ্চিত কৰি আছোঁ।",
+        "update_left": "{parent_name}এ আমাৰ ফোনটো মাজতেই কাটি দিলে, সেয়েহে গোটেই কথাটো জনা নগ'ল।",
+        "update_unreachable": "{parent_name}এ আমাৰ ফোনটো ধৰিব নোৱাৰিলে। হয়তো তেওঁ এতিয়াও সেই ফোনতে আছে।",
+        "money": "টকা",
+    },
+}
+
+for _code, _lines in RESCUE.items():
+    _lead = _intro(LANGUAGES[_code]["check"])
+    LANGUAGES[_code].update(_lines, rescue=f"{_lead} {_lines['rescue']}")
+    LANGUAGES[_code]["verify"] = LANGUAGES[_code]["check"][len(_lead):].strip()
+    LANGUAGES[_code]["update_authority"], LANGUAGES[_code]["update_paid"] = ALERTS[_code]
+
+
+def asked(language: str, amount: float | None) -> str:
+    if not amount:
+        return LANGUAGES.get(language, LANGUAGES[DEFAULT_LANGUAGE])["money"]
+    digits = str(int(amount))
+    head, groups = digits[:-3], [digits[-3:]]
+    # Indian grouping: ₹1,50,000 rather than ₹150,000.
+    while head:
+        groups.insert(0, head[-2:])
+        head = head[:-2]
+    return "₹" + ",".join(groups)

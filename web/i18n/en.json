@@ -120,6 +120,8 @@
   "signup.step1": "On your parent's phone, open the link in Chrome.",
   "signup.step2": "Tap the menu, then “Add to Home screen”.",
   "signup.step3": "Tell your parent: before paying anyone who calls, press the yellow button.",
+  "signup.profiles": "Everyone you've set up on this phone",
+  "signup.addAnother": "Add another person",
   "err.required": "Fill this in.",
   "err.phone": "Use a 10-digit Indian mobile number.",
   "err.contactPair": "Add a mobile number for this person, or clear their name.",

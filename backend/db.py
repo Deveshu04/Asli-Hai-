@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS sessions (
     contact_priority INTEGER,
     parent_ended_at REAL,
     alert_started_at REAL,
+    rescue_run_id TEXT,
+    rescue_priority INTEGER,
+    rescue_ended_at REAL,
+    rescue_pending TEXT,
+    rescue_told_at REAL,
+    retried_at REAL,
     summary_sent_at REAL
 );
 
@@ -74,7 +80,15 @@ def connect():
         conn.close()
 
 
-ADDED_COLUMNS = [("sessions", "alert_started_at", "REAL")]
+ADDED_COLUMNS = [
+    ("sessions", "alert_started_at", "REAL"),
+    ("sessions", "rescue_run_id", "TEXT"),
+    ("sessions", "rescue_priority", "INTEGER"),
+    ("sessions", "rescue_ended_at", "REAL"),
+    ("sessions", "rescue_pending", "TEXT"),
+    ("sessions", "rescue_told_at", "REAL"),
+    ("sessions", "retried_at", "REAL"),
+]
 
 
 def init_db() -> None:
@@ -83,6 +97,7 @@ def init_db() -> None:
         for table, column, kind in ADDED_COLUMNS:
             if column not in {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+        conn.execute("CREATE INDEX IF NOT EXISTS sessions_rescue_run ON sessions(rescue_run_id)")
 
 
 def one(sql: str, *args) -> dict | None:

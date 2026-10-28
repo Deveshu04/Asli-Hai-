@@ -22,7 +22,7 @@
           "call_terminate": 300,
           "check_if_user_online": false,
           "hangup_after_silence": 120,
-          "incremental_delay": 1400,
+          "incremental_delay": 2000,
           "number_of_words_for_interruption": 3
         },
         "tools_config": {
@@ -96,6 +96,36 @@
                     }
                   }
                 }
+              },
+              {
+                "key": "custom_task",
+                "name": "retry_family",
+                "description": "Call the parent's family again after an earlier check could not confirm the claim.",
+                "parameters": {
+                  "type": "object",
+                  "required": [
+                    "session_id"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "pre_call_message": {
+                  "hi": "मैं अभी आपके परिवार को कॉल कर रही हूँ। लाइन पर बने रहिए।",
+                  "en": "I'm calling your family right now. Please stay on the line.",
+                  "bn": "আমি এখনই আপনার পরিবারকে ফোন করছি। লাইনে থাকুন।",
+                  "mr": "मी आत्ताच तुमच्या कुटुंबाला फोन करत आहे. कृपया लाइनवर थांबा.",
+                  "te": "నేను ఇప్పుడే మీ కుటుంబానికి ఫోన్ చేస్తున్నాను. దయచేసి లైన్‌లోనే ఉండండి.",
+                  "ta": "நான் இப்போதே உங்கள் குடும்பத்தினரை அழைக்கிறேன். தயவுசெய்து லைனிலேயே இருங்கள்.",
+                  "gu": "હું હમણાં જ તમારા પરિવારને ફોન કરી રહી છું. કૃપા કરીને લાઇન પર રહો.",
+                  "kn": "ನಾನು ಈಗಲೇ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಕರೆ ಮಾಡುತ್ತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಲೈನ್‌ನಲ್ಲೇ ಇರಿ.",
+                  "ml": "ഞാൻ ഇപ്പോൾ തന്നെ നിങ്ങളുടെ കുടുംബത്തെ വിളിക്കുകയാണ്. ദയവായി ലൈനിൽ തുടരുക.",
+                  "pa": "ਮੈਂ ਹੁਣੇ ਤੁਹਾਡੇ ਪਰਿਵਾਰ ਨੂੰ ਫ਼ੋਨ ਕਰ ਰਹੀ ਹਾਂ। ਲਾਈਨ ਉੱਤੇ ਬਣੇ ਰਹੋ।",
+                  "od": "ମୁଁ ଏବେ ଆପଣଙ୍କ ପରିବାରକୁ ଫୋନ କରୁଛି। ଦୟାକରି ଲାଇନରେ ରୁହନ୍ତୁ।",
+                  "as": "মই এতিয়াই আপোনাৰ পৰিয়ালক ফোন কৰি আছোঁ। অনুগ্ৰহ কৰি লাইনত থাকক।"
+                }
               }
             ],
             "tools_params": {
@@ -133,6 +163,21 @@
                   "alert_authority",
                   "alert_paid"
                 ]
+              },
+              "retry_family": {
+                "url": "https://YOUR-BACKEND/tools/retry_family",
+                "method": "POST",
+                "param": {
+                  "session_id": "%(session_id)s"
+                },
+                "headers": {
+                  "Authorization": "Bearer YOUR_TOOL_SECRET",
+                  "Content-Type": "application/json"
+                },
+                "scope": "node",
+                "nodes": [
+                  "retrying"
+                ]
               }
             }
           },
@@ -147,12 +192,12 @@
               "routing_model": "gpt-4.1-mini",
               "routing_max_tokens": 250,
               "routing_instructions": "Pick the edge that matches what the parent said. If the parent mentions any family member or relative (son, daughter, beta, a name), choose the family edge even if police or officials were also mentioned. If unsure, stay on the current node.",
-              "agent_information": "You are Saathi on the 'Asli hai?' safety line, speaking to {{parent_name}}, an older parent. Reply in the language of the call, in its own script, in one or two short simple sentences. Never tell them to send money. Never call a claim genuine unless you are on verdict_real. Never ask for an OTP, PIN or account number.",
+              "agent_information": "You are Saathi on the 'Asli hai?' safety line, speaking to {{parent_name}}, an older person who may be scared. Reply in the language of the call, in its own script, in one or two short, warm sentences, and ask at most one question at a time. Listen first: respond to what they actually said and use the details they gave, such as who called and how much was asked. Rules you never break: never tell them to send money. Never call a claim genuine unless you are on verdict_real. Never ask for or repeat an OTP, PIN, password, card or account number, or the family word. Never promise that money can be recovered or refunded. Never say you are the police, a bank or a government officer. Give no legal advice beyond this: police and agencies never arrest or question anyone on a phone or video call, and there is no 'digital arrest' in the law. Never tell them to argue with the caller, and never blame them. Stay on this call and on keeping them safe from the scam; if they ask about anything else, gently say you can only help with this right now.",
               "current_node_id": "listen",
               "nodes": [
                 {
                   "id": "listen",
-                  "prompt": "In at most two questions, find out who the caller claimed to be, what they asked for (money, OTP, staying on a video call), how much, and whether anything was already sent.",
+                  "prompt": "Let {{parent_name}} tell you what happened in their own words. Each time, first acknowledge what they just said in a few words, repeating a key detail such as the name or the amount, then ask one short question about something still missing: who the caller claimed to be, what they asked for (money, an OTP, staying on a video call), how much, and whether anything was already sent. If their sentence sounds unfinished, only say a short 'haan ji, boliye' in the call's language and let them go on.",
                   "edges": [
                     {
                       "to_node_id": "already_paid",
@@ -204,7 +249,7 @@
                           {
                             "variable": "_node_turns",
                             "operator": "gte",
-                            "value": 4
+                            "value": 5
                           }
                         ]
                       }
@@ -294,7 +339,8 @@
                       "to_node_id": "aftercare",
                       "condition_type": "unconditional"
                     }
-                  ]
+                  ],
+                  "number_of_words_for_interruption": 0
                 },
                 {
                   "id": "verdict_real",
@@ -328,7 +374,8 @@
                       "to_node_id": "aftercare",
                       "condition_type": "unconditional"
                     }
-                  ]
+                  ],
+                  "number_of_words_for_interruption": 0
                 },
                 {
                   "id": "authority_scam",
@@ -352,7 +399,8 @@
                       "to_node_id": "alert_authority",
                       "condition_type": "unconditional"
                     }
-                  ]
+                  ],
+                  "number_of_words_for_interruption": 0
                 },
                 {
                   "id": "already_paid",
@@ -376,7 +424,8 @@
                       "to_node_id": "alert_paid",
                       "condition_type": "unconditional"
                     }
-                  ]
+                  ],
+                  "number_of_words_for_interruption": 0
                 },
                 {
                   "id": "alert_authority",
@@ -402,11 +451,20 @@
                 },
                 {
                   "id": "aftercare",
-                  "prompt": "Answer the parent's questions in one or two sentences. Suggest blocking the number.",
+                  "prompt": "The safety message has been given. Now talk with {{parent_name}} like a calm, caring person. Answer exactly what they asked or said, in one or two short sentences, using what you know: the caller claimed to be {{claimed_name}} and asked for {{amount_asked}} (a value shown as NULL is unknown). Never repeat advice you already gave. If money or an OTP already went, tell them to call 1930 right now. If they ask you to call their family again, say you will. When they seem settled, ask whether there is anything else.",
                   "edges": [
                     {
                       "to_node_id": "closing",
-                      "condition": "The parent has no more questions or says goodbye"
+                      "condition_type": "expression",
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "_silence_repeats",
+                            "operator": "gte",
+                            "value": 2
+                          }
+                        ]
+                      }
                     },
                     {
                       "to_node_id": "closing",
@@ -416,10 +474,45 @@
                           {
                             "variable": "_node_turns",
                             "operator": "gte",
-                            "value": 3
+                            "value": 8
                           }
                         ]
                       }
+                    },
+                    {
+                      "to_node_id": "retrying",
+                      "condition": "The parent asks Saathi to call, try or check with their family again"
+                    },
+                    {
+                      "to_node_id": "closing",
+                      "condition": "Saathi asked whether they need anything else and the parent said no, or the parent says goodbye or that they are done"
+                    }
+                  ],
+                  "repeat_after_silence_seconds": 12
+                },
+                {
+                  "id": "retrying",
+                  "prompt": "Call @retry_family now with session_id {{session_id}}.",
+                  "function_call": "retry_family",
+                  "edges": [
+                    {
+                      "to_node_id": "verdict_fake",
+                      "condition_type": "event",
+                      "event_name": "child_safe"
+                    },
+                    {
+                      "to_node_id": "verdict_real",
+                      "condition_type": "event",
+                      "event_name": "child_confirmed"
+                    },
+                    {
+                      "to_node_id": "verdict_unconfirmed",
+                      "condition_type": "event",
+                      "event_name": "not_confirmed"
+                    },
+                    {
+                      "to_node_id": "holding",
+                      "condition_type": "unconditional"
                     }
                   ]
                 },
