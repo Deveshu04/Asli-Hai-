@@ -26,7 +26,7 @@ log = logging.getLogger("asli")
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
-TRIGGERS_PER_HOUR = 10
+RESCUES_PER_HOUR = 10
 DRILL_WINDOW_S = 30 * 60
 UNREACHED = {"no-answer", "busy", "failed", "canceled", "error", "balance-low"}
 CHECK_FINAL = UNREACHED | {"completed", "stopped"}
@@ -297,6 +297,16 @@ def rescue_enabled() -> bool:
     return os.getenv("RESCUE_CALLS", "on").lower() not in {"off", "0", "false", "no"}
 
 
+def rescue_capped(family_id: str, now: float) -> bool:
+    # The tap link is the only key. Past the cap a press still reaches the parent; it just stops ringing the family.
+    rescues = db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ? AND rescue_run_id IS NOT NULL",
+                     family_id, now - 3600)["n"]
+    if rescues >= RESCUES_PER_HOUR:
+        log.warning("rescue cap reached family=%s", family_id)
+        return True
+    return False
+
+
 def rescue_live(session: dict) -> bool:
     return bool(session["rescue_run_id"]) and not session["rescue_ended_at"]
 
@@ -507,9 +517,6 @@ async def trigger(body: TriggerIn):
     )
     if recent:
         return {"session_id": recent["id"], "repeat": True}
-    # The tap link is the only key, and each press rings two phones, so a leaked link can't run up calls.
-    if db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ?", family["id"], now - 3600)["n"] >= TRIGGERS_PER_HOUR:
-        raise HTTPException(429, "Too many presses in the last hour")
 
     drill = db.one(
         "SELECT id FROM drills d WHERE family_id = ? AND (id = ? OR (? IS NULL AND ran_at > ?))"
@@ -539,7 +546,7 @@ async def trigger(body: TriggerIn):
     db.execute("UPDATE sessions SET parent_run_id = ? WHERE id = ?", run_id, session_id)
     log.info("session started id=%s stack=%s drill=%s run=%s", session_id, stack, drill_id, run_id)
     # Drills are timed rehearsals, so they leave the family's phones alone.
-    if rescue_enabled() and not drill_id:
+    if rescue_enabled() and not drill_id and not rescue_capped(family["id"], now):
         rt.spawn(start_rescue(session_id))
     return {"session_id": session_id}
 
