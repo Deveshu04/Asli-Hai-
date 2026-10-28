@@ -7,7 +7,7 @@
   <title>Register your family · Asli hai?</title>
   <script>
     (function (d) {
-      var known = ["hi", "en", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
+      var known = ["hi", "en", "hi-Latn", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
       var l = null;
       try {
         l = localStorage.getItem("asli-lang");
@@ -23,18 +23,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
-<body>
+<body class="onboarding">
   <a class="skip" href="#main" data-i18n="skip.form">Skip to the form</a>
 
   <header class="bar">
-    <a class="mark" href="./" lang="hi">असली है?</a>
+    <a class="mark" href="./" data-i18n="brand">Asli hai?</a>
     <div class="prefs" role="group" data-i18n-label="prefs.label" aria-label="Display settings">
       <label class="lang-pick">
         <span data-i18n="prefs.language">Language</span>
         <select data-lang-select>
           <option value="en" lang="en">English</option>
+          <option value="hi-Latn" lang="hi-Latn">Hinglish</option>
           <option value="hi" lang="hi">हिंदी</option>
           <option value="bn" lang="bn">বাংলা</option>
           <option value="mr" lang="mr">मराठी</option>
@@ -52,109 +53,118 @@
     </div>
   </header>
 
-  <main id="main" class="signup" tabindex="-1">
-    <h1 data-i18n="signup.h1">Register your family</h1>
-    <p class="lede" data-i18n="signup.lede">When someone calls your parent asking for money, your parent taps one button. Saathi calls them back, then calls you to check whether it was really you.</p>
-    <p class="hint" data-i18n="signup.required">Every field is required unless it says optional.</p>
+  <main id="main" class="ob" tabindex="-1">
+    <form id="ob" class="ob-card" novalidate>
+      <div class="ob-top" id="ob-top" hidden>
+        <div class="ob-progress" aria-hidden="true"><span id="ob-bar"></span></div>
+        <p class="ob-count" id="ob-count"></p>
+      </div>
 
-    <form id="signup" novalidate>
-      <fieldset class="group">
-        <legend data-i18n="signup.parent">Your parent</legend>
-        <div class="field">
-          <label for="parent_name" data-i18n="signup.parentName">Name Saathi should use</label>
-          <input id="parent_name" name="parent_name" required autocomplete="off" data-i18n-ph="signup.parentNamePh" placeholder="Sunita" aria-describedby="parent_name-error">
-          <p class="help" id="parent_name-error" hidden></p>
-        </div>
-        <div class="pair">
-          <div class="field">
-            <label for="parent_phone" data-i18n="signup.mobile">Mobile number</label>
-            <input id="parent_phone" name="parent_phone" required type="tel" inputmode="tel" autocomplete="off" placeholder="98100 12345" aria-describedby="phone-help parent_phone-error">
-            <p class="help" id="phone-help" data-i18n="signup.phoneHelp">10-digit Indian mobile</p>
-            <p class="help" id="parent_phone-error" hidden></p>
-          </div>
-          <div class="field">
-            <label for="language" data-i18n="signup.callLanguage">Language Saathi speaks</label>
-            <select id="language" name="language" aria-describedby="language-help"></select>
-            <p class="help" id="language-help" data-i18n="signup.languageHelp">Saathi calls your parent and you in this language. The button opens in it too.</p>
-          </div>
-        </div>
-      </fieldset>
+      <section class="ob-step" data-step="intro">
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 5 9 11v11c0 10 6.5 17.5 15 21 8.5-3.5 15-11 15-21V11z"/><path d="m17 24 5 5 9-10"/></svg></div>
+        <h1 tabindex="-1" data-i18n="ob.title">Set up Asli hai? for your parent</h1>
+        <p class="ob-hint" data-i18n="ob.intro">A few quick questions, one at a time. It takes about two minutes.</p>
+      </section>
 
-      <fieldset class="group">
-        <legend data-i18n="signup.who">Who Saathi calls to check</legend>
-        <p class="hint" data-i18n="signup.whoHint">Saathi tries the first person, then the second if they don't pick up. Save Saathi's calling number in both phones so it isn't ignored.</p>
-        <div class="contact" role="group" aria-labelledby="c1-title">
-          <h2 id="c1-title" data-i18n="signup.first">First to call</h2>
-          <div class="pair">
-            <div class="field">
-              <label for="c1_name" data-i18n="signup.name">Name</label>
-              <input id="c1_name" required autocomplete="off" data-i18n-ph="signup.namePh1" placeholder="Rahul" aria-describedby="c1_name-error">
-              <p class="help" id="c1_name-error" hidden></p>
-            </div>
-            <div class="field">
-              <label for="c1_relation"><span data-i18n="signup.relation">Relation to parent</span> <span class="optional" data-i18n="signup.optional">(optional)</span></label>
-              <input id="c1_relation" autocomplete="off" data-i18n-ph="signup.relationPh1" placeholder="son">
-            </div>
-          </div>
-          <div class="field">
-            <label for="c1_phone" data-i18n="signup.mobile">Mobile number</label>
-            <input id="c1_phone" required type="tel" inputmode="tel" autocomplete="off" placeholder="98200 54321" aria-describedby="c1_phone-error">
-            <p class="help" id="c1_phone-error" hidden></p>
-          </div>
-        </div>
-        <div class="contact" role="group" aria-labelledby="c2-title">
-          <h2 id="c2-title"><span data-i18n="signup.second">Second to call</span> <span class="optional" data-i18n="signup.optional">(optional)</span></h2>
-          <div class="pair">
-            <div class="field">
-              <label for="c2_name" data-i18n="signup.name">Name</label>
-              <input id="c2_name" autocomplete="off" data-i18n-ph="signup.namePh2" placeholder="Priya" aria-describedby="c2_name-error">
-              <p class="help" id="c2_name-error" hidden></p>
-            </div>
-            <div class="field">
-              <label for="c2_relation" data-i18n="signup.relation">Relation to parent</label>
-              <input id="c2_relation" autocomplete="off" data-i18n-ph="signup.relationPh2" placeholder="daughter">
-            </div>
-          </div>
-          <div class="field">
-            <label for="c2_phone" data-i18n="signup.mobile">Mobile number</label>
-            <input id="c2_phone" type="tel" inputmode="tel" autocomplete="off" aria-describedby="c2_phone-error">
-            <p class="help" id="c2_phone-error" hidden></p>
-          </div>
-        </div>
-      </fieldset>
+      <section class="ob-step" data-step="parentName" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42c1.5-8.5 7.5-13 15-13s13.5 4.5 15 13"/></svg></div>
+        <h1 tabindex="-1"><label for="parent_name" id="q-parentName"></label></h1>
+        <p class="ob-hint" id="h-parentName"></p>
+        <input id="parent_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.parentNamePh" placeholder="Sunita" aria-describedby="h-parentName parent_name-error">
+        <p class="ob-error" id="parent_name-error" role="alert" hidden></p>
+      </section>
 
-      <fieldset class="group">
-        <legend data-i18n="signup.word">Family word</legend>
-        <p class="hint" id="word-help" data-i18n="signup.wordHint">When you really need money, Saathi asks you for this word before telling your parent the call was genuine. Pick something a stranger can't find online, then type it in English letters and in your family's language.</p>
-        <div class="pair">
-          <div class="field">
-            <label for="family_word_latin" data-i18n="signup.wordLatin">In English letters</label>
-            <input id="family_word_latin" required autocomplete="off" spellcheck="false" placeholder="aam ras" aria-describedby="word-help family_word_latin-error">
-            <p class="help" id="family_word_latin-error" hidden></p>
-          </div>
-          <div class="field" id="native-field">
-            <label for="family_word_native" id="native-label"></label>
-            <input id="family_word_native" required autocomplete="off" spellcheck="false" lang="hi" placeholder="आम रस" aria-describedby="word-help family_word_native-error">
-            <p class="help" id="family_word_native-error" hidden></p>
-          </div>
-        </div>
-      </fieldset>
+      <section class="ob-step" data-step="parentPhone" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="14" y="4" width="20" height="40" rx="4"/><path d="M21 37h6"/></svg></div>
+        <h1 tabindex="-1"><label for="parent_phone" id="q-parentPhone"></label></h1>
+        <p class="ob-hint" id="h-parentPhone"></p>
+        <input id="parent_phone" class="ob-input" type="tel" inputmode="tel" autocomplete="off" placeholder="98100 12345" aria-describedby="h-parentPhone parent_phone-error">
+        <p class="ob-error" id="parent_phone-error" role="alert" hidden></p>
+      </section>
 
-      <fieldset class="group">
-        <legend data-i18n="signup.invite">Pilot invite</legend>
-        <div class="field">
-          <label for="invite_code" data-i18n="signup.inviteLabel">Invite code from the pilot team</label>
-          <input id="invite_code" autocomplete="off" aria-describedby="invite_code-error">
-          <p class="help" id="invite_code-error" hidden></p>
-        </div>
-      </fieldset>
+      <section class="ob-step" data-step="language" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M7 9h26v18H18l-8 7v-7H7z"/><path d="M22 31v4h11l7 6v-6h1V17h-4"/></svg></div>
+        <h1 tabindex="-1" id="q-language"></h1>
+        <p class="ob-hint" id="h-language"></p>
+        <div class="ob-tiles" id="lang-tiles" role="radiogroup" aria-labelledby="q-language" aria-describedby="h-language"></div>
+      </section>
 
-      <button class="button primary" type="submit" data-i18n="signup.submit">Register family</button>
-      <p id="form-error" class="form-error" role="alert" hidden></p>
+      <section class="ob-step" data-step="first" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="17" cy="16" r="7"/><path d="M4 40c1-7 6-11 13-11s12 4 13 11"/><circle cx="34" cy="18" r="5"/><path d="M31 29c6 0 11 3 13 10"/></svg></div>
+        <h1 tabindex="-1" id="q-first"></h1>
+        <p class="ob-hint" id="h-first"></p>
+        <label class="ob-label" for="c1_name" data-i18n="signup.name">Name</label>
+        <input id="c1_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.namePh1" placeholder="Rahul" aria-describedby="c1_name-error">
+        <p class="ob-error" id="c1_name-error" role="alert" hidden></p>
+        <fieldset class="ob-chips">
+          <legend id="q-relation"></legend>
+          <input type="radio" name="relation" id="rel-son" value="son" checked><label for="rel-son" data-i18n="ob.rel.son">Son</label>
+          <input type="radio" name="relation" id="rel-daughter" value="daughter"><label for="rel-daughter" data-i18n="ob.rel.daughter">Daughter</label>
+          <input type="radio" name="relation" id="rel-other" value="other"><label for="rel-other" data-i18n="ob.rel.other">Someone else</label>
+        </fieldset>
+        <input id="c1_relation" class="ob-input small" autocomplete="off" data-i18n-ph="ob.relOther" placeholder="Their relation" data-i18n-label="ob.relOther" aria-label="Their relation" hidden>
+      </section>
+
+      <section class="ob-step" data-step="firstPhone" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M12 6h8l3 9-5 3c2 5 6 9 11 11l3-5 9 3v8c0 2-2 4-4 4C20 39 9 28 8 10c0-2 2-4 4-4z"/></svg></div>
+        <h1 tabindex="-1"><label for="c1_phone" id="q-firstPhone"></label></h1>
+        <p class="ob-hint" id="h-firstPhone"></p>
+        <input id="c1_phone" class="ob-input" type="tel" inputmode="tel" autocomplete="off" placeholder="98200 54321" aria-describedby="h-firstPhone c1_phone-error">
+        <p class="ob-error" id="c1_phone-error" role="alert" hidden></p>
+      </section>
+
+      <section class="ob-step" data-step="second" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="20" cy="16" r="7"/><path d="M7 40c1-7 6-11 13-11 4 0 7 1 9 3"/><path d="M36 28v12M30 34h12"/></svg></div>
+        <h1 tabindex="-1" id="q-second"></h1>
+        <p class="ob-hint" id="h-second"></p>
+        <label class="ob-label" for="c2_name" data-i18n="signup.name">Name</label>
+        <input id="c2_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.namePh2" placeholder="Priya" aria-describedby="c2_name-error">
+        <p class="ob-error" id="c2_name-error" role="alert" hidden></p>
+        <label class="ob-label" for="c2_phone" data-i18n="signup.mobile">Mobile number</label>
+        <input id="c2_phone" class="ob-input" type="tel" inputmode="tel" autocomplete="off" aria-describedby="c2_phone-error">
+        <p class="ob-error" id="c2_phone-error" role="alert" hidden></p>
+      </section>
+
+      <section class="ob-step" data-step="word" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="15" cy="24" r="8"/><path d="M23 24h20M37 24v7M43 24v5"/></svg></div>
+        <h1 tabindex="-1" id="q-word" data-i18n="ob.q.word">Choose a family word</h1>
+        <p class="ob-hint" id="h-word"></p>
+        <label class="ob-label" for="family_word_latin" data-i18n="signup.wordLatin">In English letters</label>
+        <input id="family_word_latin" class="ob-input" autocomplete="off" spellcheck="false" placeholder="aam ras" aria-describedby="h-word family_word_latin-error">
+        <p class="ob-error" id="family_word_latin-error" role="alert" hidden></p>
+        <div id="native-field">
+          <label class="ob-label" for="family_word_native" id="native-label"></label>
+          <input id="family_word_native" class="ob-input" autocomplete="off" spellcheck="false" lang="hi" placeholder="आम रस" aria-describedby="h-word family_word_native-error">
+          <p class="ob-error" id="family_word_native-error" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="invite" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M6 14h36v6a4 4 0 0 0 0 8v6H6v-6a4 4 0 0 0 0-8z"/><path d="M30 14v20" stroke-dasharray="3 3"/></svg></div>
+        <h1 tabindex="-1"><label for="invite_code" id="q-invite" data-i18n="ob.q.invite">Enter your pilot invite code</label></h1>
+        <p class="ob-hint" id="h-invite" data-i18n="ob.h.invite">The pilot team gives you this code.</p>
+        <input id="invite_code" class="ob-input" autocomplete="off" aria-describedby="h-invite invite_code-error">
+        <p class="ob-error" id="invite_code-error" role="alert" hidden></p>
+      </section>
+
+      <section class="ob-step" data-step="review" hidden>
+        <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="9" y="6" width="30" height="36" rx="3"/><path d="m15 17 3 3 5-5M15 29l3 3 5-5M27 18h6M27 30h6"/></svg></div>
+        <h1 tabindex="-1" data-i18n="ob.q.review">Check the details</h1>
+        <p class="ob-hint" data-i18n="ob.h.review">Change anything that isn't right, then register.</p>
+        <dl class="ob-review" id="ob-review"></dl>
+        <p class="ob-error" id="form-error" role="alert" hidden></p>
+      </section>
+
+      <div class="ob-nav" id="ob-nav">
+        <button type="button" class="button secondary" id="ob-back" data-i18n="ob.back" hidden>Back</button>
+        <button type="button" class="button secondary" id="ob-skip" data-i18n="ob.skip" hidden>Skip</button>
+        <button type="submit" class="button primary" id="ob-next" data-i18n="ob.start">Start</button>
+      </div>
     </form>
 
-    <section id="done" class="done" hidden aria-labelledby="done-title">
-      <h2 id="done-title" tabindex="-1" data-i18n="signup.done">Family registered</h2>
+    <section id="done" class="ob-card done" hidden aria-labelledby="done-title">
+      <div class="ob-icon ok" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18"/><path d="m16 24 6 6 11-12"/></svg></div>
+      <h1 id="done-title" tabindex="-1" data-i18n="signup.done">Family registered</h1>
       <p data-i18n="signup.doneBody">Open this link on your parent's phone and add it to the home screen. That is their button.</p>
       <div class="link-row">
         <input id="tap-link" readonly data-i18n-label="signup.linkLabel" aria-label="Your parent's button link">
@@ -169,7 +179,7 @@
     </section>
   </main>
 
-  <script src="site.js?v=3"></script>
+  <script src="site.js?v=4"></script>
   <script>
     const LANGS = {
       hi: { native: "हिंदी", script: /[ऀ-ॿ]/, sample: "आम रस" },
@@ -185,18 +195,25 @@
       od: { native: "ଓଡ଼ିଆ", script: /[଀-୿]/, sample: "ଆମ୍ବ" },
       as: { native: "অসমীয়া", script: /[ঀ-৿]/, sample: "আম" },
     };
+    // Extra spellings so the backend can match the caller's "beta" or "बेटा" to this contact.
+    const RELATIONS = { son: "son beta बेटा", daughter: "daughter beti बेटी" };
+    const STEPS = ["intro", "parentName", "parentPhone", "language", "first", "firstPhone", "second", "word", "invite", "review"];
+    const OPTIONAL = new Set(["second", "invite"]);
 
-    const form = document.getElementById("signup");
-    const formError = document.getElementById("form-error");
-    const callSelect = document.getElementById("language");
+    const form = document.getElementById("ob");
+    const tiles = document.getElementById("lang-tiles");
+    const backBtn = document.getElementById("ob-back");
+    const skipBtn = document.getElementById("ob-skip");
+    const nextBtn = document.getElementById("ob-next");
     const copyBtn = document.getElementById("copy");
-    const copyStatus = document.getElementById("copy-status");
     const val = (id) => document.getElementById(id).value.trim();
     const htmlLang = (code) => (code === "od" ? "or" : code);
+    const t = (key, vars) => asli.t(key, vars);
+    let step = 0;
     let errors = {};
     let formMessage = null;
+    let callLang = null;
     let copied = false;
-    let callChosen = false;
 
     const isPhone = (raw) => {
       let digits = raw.replace(/\D/g, "");
@@ -205,100 +222,158 @@
       return /^[6-9]\d{9}$/.test(digits);
     };
 
-    const langName = () => asli.t("lang." + callSelect.value);
+    const names = () => ({ name: val("parent_name") || t("ob.review.parent"), first: val("c1_name") || t("signup.namePh1") });
+    const relation = () => document.querySelector("input[name=relation]:checked").value;
+    const relationText = () => (relation() === "other" ? val("c1_relation") : `${t("ob.rel." + relation())} ${RELATIONS[relation()]}`);
+    const langName = (code) => t("lang." + code);
 
-    function paintCallOptions() {
+    function buildTiles() {
       const page = asli.lang();
-      const current = callChosen ? callSelect.value : page === "en" ? "hi" : page;
-      callSelect.replaceChildren(...Object.entries(LANGS).map(([code, lang]) => {
-        const option = document.createElement("option");
-        option.value = code;
-        option.lang = htmlLang(code);
-        option.textContent = code === page ? lang.native : `${lang.native} (${asli.t("lang." + code)})`;
-        return option;
+      if (!callLang) callLang = page in LANGS ? page : "hi";
+      tiles.replaceChildren(...Object.entries(LANGS).flatMap(([code, lang]) => {
+        const input = Object.assign(document.createElement("input"), { type: "radio", name: "call-lang", id: "lang-" + code, value: code, checked: code === callLang });
+        const label = document.createElement("label");
+        label.htmlFor = input.id;
+        label.append(Object.assign(document.createElement("span"), { className: "tile-native", lang: htmlLang(code), textContent: lang.native }));
+        if (code !== page) label.append(Object.assign(document.createElement("span"), { className: "tile-name", textContent: langName(code) }));
+        return [input, label];
       }));
-      callSelect.value = current;
     }
 
-    function paintWordField() {
-      const lang = LANGS[callSelect.value];
-      const input = document.getElementById("family_word_native");
+    tiles.addEventListener("change", (event) => {
+      callLang = event.target.value;
+      delete errors.family_word_native;
+      paint();
+    });
+
+    document.querySelectorAll("input[name=relation]").forEach((radio) => radio.addEventListener("change", () => {
+      const other = relation() === "other";
+      document.getElementById("c1_relation").hidden = !other;
+      if (other) document.getElementById("c1_relation").focus();
+    }));
+
+    function paintTexts() {
+      const vars = names();
+      for (const key of ["parentName", "parentPhone", "language", "first", "firstPhone", "second"]) {
+        document.getElementById("q-" + key).textContent = t("ob.q." + key, vars);
+        document.getElementById("h-" + key).textContent = t("ob.h." + key, vars);
+      }
+      document.getElementById("q-relation").textContent = t("ob.relation", vars);
+      document.getElementById("h-word").textContent = t("ob.h.word", vars);
+      const lang = LANGS[callLang];
+      const native = document.getElementById("family_word_native");
       document.getElementById("native-field").hidden = !lang.script;
-      input.required = Boolean(lang.script);
-      document.getElementById("native-label").textContent = lang.script ? asli.t("signup.wordNative", { lang: langName() }) : "";
       if (lang.script) {
-        input.lang = htmlLang(callSelect.value);
-        input.placeholder = lang.sample;
+        document.getElementById("native-label").textContent = t("signup.wordNative", { lang: langName(callLang) });
+        native.lang = htmlLang(callLang);
+        native.placeholder = lang.sample;
       }
     }
 
-    function paint() {
-      paintWordField();
-      document.querySelectorAll("#signup input").forEach((input) => {
+    function paintErrors() {
+      form.querySelectorAll(".ob-input").forEach((input) => {
         const box = document.getElementById(input.id + "-error");
         const key = errors[input.id];
         input.setAttribute("aria-invalid", key ? "true" : "false");
         if (box) {
           box.hidden = !key;
-          box.textContent = key ? asli.t("err." + key, { lang: langName() }) : "";
-          box.classList.toggle("form-error", Boolean(key));
+          box.textContent = key ? t("err." + key, { lang: langName(callLang) }) : "";
         }
       });
+      const formError = document.getElementById("form-error");
       formError.hidden = !formMessage;
-      formError.textContent = formMessage ? asli.t("err." + formMessage) : "";
-      copyBtn.textContent = asli.t(copied ? "signup.copied" : "signup.copy");
+      formError.textContent = formMessage ? t("err." + formMessage) : "";
     }
 
-    function validate() {
+    function paintReview() {
+      const rows = [
+        ["ob.review.parent", `${val("parent_name")} · ${val("parent_phone")}`, "parentName"],
+        ["ob.review.language", LANGS[callLang].native, "language"],
+        ["ob.review.first", `${val("c1_name")} · ${val("c1_phone")}`, "first"],
+        ["ob.review.second", val("c2_name") ? `${val("c2_name")} · ${val("c2_phone")}` : t("ob.review.none"), "second"],
+        ["ob.review.word", [val("family_word_latin"), LANGS[callLang].script ? val("family_word_native") : ""].filter(Boolean).join(" · "), "word"],
+      ];
+      document.getElementById("ob-review").replaceChildren(...rows.map(([label, value, target]) => {
+        const row = Object.assign(document.createElement("div"), { className: "ob-row" });
+        const change = Object.assign(document.createElement("button"), { type: "button", className: "ob-change", textContent: t("ob.change") });
+        change.setAttribute("aria-label", `${t("ob.change")}: ${t(label)}`);
+        change.addEventListener("click", () => go(STEPS.indexOf(target)));
+        const dd = document.createElement("dd");
+        dd.append(Object.assign(document.createElement("span"), { textContent: value }), change);
+        row.append(Object.assign(document.createElement("dt"), { textContent: t(label) }), dd);
+        return row;
+      }));
+    }
+
+    function paint() {
+      const name = STEPS[step];
+      const counted = STEPS.length - 1;
+      document.getElementById("ob-top").hidden = step === 0;
+      document.getElementById("ob-count").textContent = t("ob.step", { n: step, total: counted });
+      document.getElementById("ob-bar").style.width = `${(step / counted) * 100}%`;
+      form.querySelectorAll(".ob-step").forEach((section) => { section.hidden = section.dataset.step !== name; });
+      backBtn.hidden = step === 0;
+      skipBtn.hidden = !OPTIONAL.has(name);
+      nextBtn.textContent = t(step === 0 ? "ob.start" : name === "review" ? "signup.submit" : "ob.next");
+      paintTexts();
+      paintErrors();
+      if (name === "review") paintReview();
+      copyBtn.textContent = t(copied ? "signup.copied" : "signup.copy");
+    }
+
+    function validate(name) {
       const found = {};
-      if (!val("parent_name")) found.parent_name = "required";
-      if (!val("parent_phone")) found.parent_phone = "required";
-      else if (!isPhone(val("parent_phone"))) found.parent_phone = "phone";
-      if (!val("c1_name")) found.c1_name = "required";
-      if (!val("c1_phone")) found.c1_phone = "required";
-      else if (!isPhone(val("c1_phone"))) found.c1_phone = "phone";
-      if (val("c2_name") && !val("c2_phone")) found.c2_phone = "contactPair";
-      if (!val("c2_name") && val("c2_phone")) found.c2_name = "contactName";
-      if (val("c2_phone") && !isPhone(val("c2_phone"))) found.c2_phone = "phone";
-      if (!val("family_word_latin")) found.family_word_latin = "required";
-      const lang = LANGS[callSelect.value];
-      if (lang.script) {
-        if (!val("family_word_native")) found.family_word_native = "required";
-        else if (!lang.script.test(val("family_word_native"))) found.family_word_native = "script";
+      const phone = (id) => {
+        if (!val(id)) found[id] = "required";
+        else if (!isPhone(val(id))) found[id] = "phone";
+      };
+      if (name === "parentName" && !val("parent_name")) found.parent_name = "required";
+      if (name === "parentPhone") phone("parent_phone");
+      if (name === "first" && !val("c1_name")) found.c1_name = "required";
+      if (name === "firstPhone") phone("c1_phone");
+      if (name === "second" && (val("c2_name") || val("c2_phone"))) {
+        if (!val("c2_name")) found.c2_name = "contactName";
+        if (!val("c2_phone")) found.c2_phone = "contactPair";
+        else if (!isPhone(val("c2_phone"))) found.c2_phone = "phone";
+      }
+      if (name === "word") {
+        if (!val("family_word_latin")) found.family_word_latin = "required";
+        const lang = LANGS[callLang];
+        if (lang.script) {
+          if (!val("family_word_native")) found.family_word_native = "required";
+          else if (!lang.script.test(val("family_word_native"))) found.family_word_native = "script";
+        }
       }
       return found;
     }
 
-    function fail(fieldErrors, message) {
+    function go(index) {
+      step = index;
+      errors = {};
+      formMessage = null;
+      paint();
+      const section = form.querySelector(`.ob-step[data-step="${STEPS[step]}"]`);
+      section.classList.remove("enter");
+      void section.offsetWidth;
+      section.classList.add("enter");
+      section.querySelector("h1").focus();
+    }
+
+    function fail(fieldErrors, message, at) {
+      if (at !== undefined && at !== step) go(at);
       errors = fieldErrors;
       formMessage = message;
-      paint();
+      paintErrors();
       const first = Object.keys(fieldErrors)[0];
       if (first) document.getElementById(first).focus();
     }
 
-    asli.onLang(() => {
-      paintCallOptions();
-      paint();
-    });
-
-    callSelect.addEventListener("change", () => {
-      callChosen = true;
-      delete errors.family_word_native;
-      paint();
-    });
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const found = validate();
-      if (Object.keys(found).length) return fail(found, "summary");
-      fail({}, null);
-
-      const contacts = [1, 2]
-        .map((n) => ({ name: val(`c${n}_name`), relation: val(`c${n}_relation`), phone: val(`c${n}_phone`) }))
-        .filter((c) => c.name && c.phone);
-      const button = form.querySelector("button[type=submit]");
-      button.disabled = true;
+    async function register() {
+      const contacts = [
+        { name: val("c1_name"), relation: relationText(), phone: val("c1_phone") },
+        { name: val("c2_name"), relation: "", phone: val("c2_phone") },
+      ].filter((c) => c.name && c.phone);
+      nextBtn.disabled = true;
       try {
         const res = await fetch("../families", {
           method: "POST",
@@ -306,16 +381,16 @@
           body: JSON.stringify({
             parent_name: val("parent_name"),
             parent_phone: val("parent_phone"),
-            language: callSelect.value,
+            language: callLang,
             contacts,
             family_word_latin: val("family_word_latin"),
-            family_word_native: LANGS[callSelect.value].script ? val("family_word_native") : "",
+            family_word_native: LANGS[callLang].script ? val("family_word_native") : "",
             invite_code: val("invite_code"),
           }),
         });
         const body = await res.json().catch(() => ({}));
-        if (res.status === 403) return fail({ invite_code: "invite" }, null);
-        if (res.status === 409) return fail({ parent_phone: "duplicate" }, null);
+        if (res.status === 403) return fail({ invite_code: "invite" }, null, STEPS.indexOf("invite"));
+        if (res.status === 409) return fail({ parent_phone: "duplicate" }, null, STEPS.indexOf("parentPhone"));
         if (!res.ok) return fail({}, "server");
         form.hidden = true;
         document.getElementById("tap-link").value = new URL(body.tap_url, location.href).href;
@@ -324,8 +399,25 @@
       } catch (err) {
         fail({}, "network");
       } finally {
-        button.disabled = false;
+        nextBtn.disabled = false;
       }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = STEPS[step];
+      if (name === "review") return register();
+      const found = validate(name);
+      if (Object.keys(found).length) return fail(found, null);
+      go(step + 1);
+    });
+
+    backBtn.addEventListener("click", () => go(step - 1));
+
+    skipBtn.addEventListener("click", () => {
+      if (STEPS[step] === "second") ["c2_name", "c2_phone"].forEach((id) => { document.getElementById(id).value = ""; });
+      if (STEPS[step] === "invite") document.getElementById("invite_code").value = "";
+      go(step + 1);
     });
 
     copyBtn.addEventListener("click", async () => {
@@ -334,10 +426,15 @@
         await navigator.clipboard.writeText(link.value);
         copied = true;
         paint();
-        copyStatus.textContent = asli.t("signup.copied");
+        document.getElementById("copy-status").textContent = t("signup.copied");
       } catch {
         link.select();
       }
+    });
+
+    asli.onLang(() => {
+      buildTiles();
+      paint();
     });
   </script>
 </body>

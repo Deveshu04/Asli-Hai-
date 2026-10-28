@@ -107,6 +107,15 @@
       "alreadyPaid": "আতংকিত নহ'ব, কিন্তু এতিয়াই 1930 ত ফোন কৰক, প্ৰথম কেইঘণ্টামানেই আটাইতকৈ গুৰুত্বপূৰ্ণ। তাৰ পিছত আপোনাৰ বেংকলৈও ফোন কৰক। মই এতিয়াই আপোনাৰ পৰিয়ালক খবৰ দি আছোঁ।",
       "closing": "নিজৰ যত্ন ল'ব। যেতিয়াই সন্দেহ হয়, এই বুটামটোকে টিপিব। নমস্কাৰ।",
       "thanks": "ধন্যবাদ। মই এতিয়াই তেওঁক জনাই আছোঁ। নমস্কাৰ।"
+    },
+    "hi-Latn": {
+      "preCall": "Main abhi aapke parivaar ko call kar rahi hoon. Line par bane rahiye.",
+      "verdictFake": "Achhi khabar. Maine aapke parivaar se baat kar li hai. Woh bilkul theek hain aur unhone aapko koi call nahi kiya. Woh call nakli tha. Koi paisa ya OTP mat dijiye, aur us number ko block kar dijiye.",
+      "verdictUnconfirmed": "Abhi main aapke parivaar se pakki baat nahi kar paayi. Jab tak aap khud unse unke purane number par baat na kar lein, koi paisa mat bhejiye. Asli musibat hogi toh woh thoda intezaar kar sakti hai.",
+      "authorityScam": "Dhyaan se suniye. Digital arrest naam ki koi cheez kaanoon mein nahi hai. Police, CBI ya court video call par paise nahi maangte. Abhi woh call kaat dijiye, aur koi OTP ya paisa mat dijiye. Main aapke parivaar ko bata rahi hoon.",
+      "alreadyPaid": "Ghabraiye mat, par abhi turant 1930 par call kijiye, shuru ke ghante sabse zaroori hote hain. Phir apne bank ko bhi call kijiye. Main aapke parivaar ko abhi khabar kar rahi hoon.",
+      "closing": "Apna dhyaan rakhiye. Jab bhi shak ho, yahi button dabaiye. Namaste.",
+      "thanks": "Shukriya. Main unhe abhi bata rahi hoon. Namaste."
     }
   };
 
@@ -158,6 +167,10 @@
     "as": {
       "parent": "নমস্কাৰ {parent_name}, মই সাথী, অসলী হৈ-ৰ পৰা কৈছোঁ। এইমাত্ৰ আপোনাক কোনে ফোন কৰিছিল, আৰু তেওঁলোকে কি বিচাৰিছিল?",
       "check": "নমস্কাৰ {child_name}, মই সাথী, অসলী হৈ-ৰ পৰা কৈছোঁ, {parent_name}ৰ সুৰক্ষা লাইন। এইমাত্ৰ তেওঁলৈ এটা ফোন আহিছিল, য'ত কোনোবাই {claimed_name} সাজি টকা বিচাৰিছিল। আপুনি এইমাত্ৰ তেওঁক ফোন কৰিছিল নেকি?"
+    },
+    "hi-Latn": {
+      "parent": "Namaste {parent_name} ji, main Saathi, Asli hai se bol rahi hoon. Abhi aapko kisne call kiya tha, aur woh kya maang rahe the?",
+      "check": "Namaste {child_name}, main Saathi, Asli hai se bol rahi hoon, {parent_name} ji ki suraksha line. Abhi unhe ek call aaya jismein kisi ne {claimed_name} bankar paise maange. Kya aapne abhi unhe call kiya tha?"
     }
   };
 
@@ -226,6 +239,18 @@
   const SPEED = 3;
   const t = (key, vars) => window.asli.t(key, vars);
   const htmlLang = (code) => (code === "od" ? "or" : code);
+  const defaultCall = (lang) => (VOICES.some((v) => v.code === lang) ? lang : "hi");
+
+  function fitDisc() {
+    const disc = document.querySelector(".mini-seal .disc");
+    if (!disc) return;
+    disc.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(disc).fontSize);
+    while (disc.scrollWidth > disc.clientWidth && size > 12) {
+      size -= 1;
+      disc.style.fontSize = size + "px";
+    }
+  }
 
   function languageOptions(select, current) {
     const page = window.asli.lang();
@@ -251,8 +276,9 @@
     };
     choice.addEventListener("change", paintVoice);
     window.asli.onLang((lang) => {
-      languageOptions(choice, choice.value || (lang === "en" ? "hi" : lang));
+      languageOptions(choice, choice.value || defaultCall(lang));
       paintVoice();
+      fitDisc();
     });
   }
 
@@ -526,7 +552,7 @@
 
   window.asli.onLang(async (lang) => {
     pageDict = await window.asli.load(lang);
-    languageOptions(callSelect, callChosen ? callLang : lang === "en" ? "hi" : lang);
+    languageOptions(callSelect, callChosen ? callLang : defaultCall(lang));
     await setCallLang(callSelect.value);
   });
 

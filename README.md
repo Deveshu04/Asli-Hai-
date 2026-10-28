@@ -53,10 +53,11 @@ sequenceDiagram
 
 The people using this are parents over 55, often in a panic.
 
-- **Every page in 12 languages.** The home page, signup and the tap button come in every call language, with a language picker on each page. Translations live in `web/i18n/<language>.json`, and a page loads only the language in use.
+- **Every page in 12 languages, plus Hinglish.** The home page, signup and the tap button come in every call language, plus Hinglish (Hindi in English letters). English pages are entirely English. There's a language picker on each page. Translations live in `web/i18n/<language>.json`, and a page loads only the language in use.
 - **Readable scripts.** Each script gets a matching Noto font, loaded only when that language is picked, so Tamil, Odia and the rest don't fall back to whatever the phone has.
 - **The parent's own setting.** The tap button opens in the language the family picked at signup and remembers its own setting, so a child browsing the site in English doesn't change it for the parent.
 - **A demo in any language.** The simulator plays the call in any of the 12 languages, with subtitles in the page's language.
+- **One question at a time.** Signup walks through nine short steps, with a progress bar, big inputs, tappable language tiles and a review screen before anything is saved.
 - **Larger text** with one button on every page.
 - **One huge button.** The parent's only control is a single, high-contrast button with a short vibration when pressed.
 - **Screen readers and keyboards.** Every form field has a label, errors are tied to their fields and focus moves to the first one, status changes are announced, and there's a skip link on every page.
@@ -90,7 +91,7 @@ The same graph runs on two stacks, so accuracy on Hindi names and seconds to ver
 | --- | --- |
 | `agents/` | The four Bolna graph agents: parent line and family check, one of each per stack |
 | `backend/` | FastAPI and SQLite. Places the calls, decides the verdict, fires it into the live call, sends the summary |
-| `web/` | `index.html` is the home page with a check simulator; `signup.html` registers a family; `tap.html` is the parent's one-tap button (`?demo=1` shows it without placing a call) |
+| `web/` | `index.html` is the home page with a check simulator; `signup.html` registers a family through a one-question-per-screen questionnaire; `tap.html` is the parent's one-tap button (`?demo=1` shows it without placing a call) |
 | `scripts/` | `push_agents.py` creates or updates the agents, `summary_workflow.py` builds the WhatsApp workflow, `new_session.py` runs a timed test session |
 
 ### Backend endpoints

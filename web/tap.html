@@ -10,7 +10,7 @@
   <title>असली है?</title>
   <script>
     (function (d) {
-      var known = ["hi", "en", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
+      var known = ["hi", "en", "hi-Latn", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
       var l = null;
       try {
         l = localStorage.getItem("asli-lang-tap");
@@ -23,17 +23,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body class="tap">
   <header class="bar">
-    <span class="mark" lang="hi">असली है?</span>
+    <span class="mark" id="brand" lang="hi">असली है?</span>
     <div class="prefs">
       <label class="lang-pick">
         <span id="lang-label"></span>
         <select data-lang-select>
           <option value="hi" lang="hi">हिंदी</option>
           <option value="en" lang="en">English</option>
+          <option value="hi-Latn" lang="hi-Latn">Hinglish</option>
           <option value="bn" lang="bn">বাংলা</option>
           <option value="mr" lang="mr">मराठी</option>
           <option value="te" lang="te">తెలుగు</option>
@@ -59,9 +60,11 @@
 
   <footer class="helpline"><span id="helpline"></span> <a href="tel:1930">1930</a></footer>
 
-  <script src="site.js?v=3"></script>
+  <script src="site.js?v=4"></script>
   <script>
+    const BRAND = { hi: "असली है?", en: "Asli hai?", "hi-Latn": "Asli hai?", bn: "আসলি হ্যায়?", mr: "असली है?", te: "అస్లీ హై?", ta: "அஸ்லி ஹை?", gu: "અસલી હૈ?", kn: "ಅಸ್ಲಿ ಹೈ?", ml: "അസ്‌ലി ഹൈ?", pa: "ਅਸਲੀ ਹੈ?", od: "ଅସଲି ହୈ?", as: "অসলী হৈ?" };
     const COPY = {
+      "hi-Latn": { question: "Kisi ne phone par paise ya OTP maange?", press: "Dabaiye", calling: "Call aa raha hai", idle: "Dabaate hi Saathi aapko call karegi. Kuch bhi bhejne se pehle unse baat kijiye.", dialing: "Call laga rahe hain…", ringing: "Aapka phone abhi bajega. Use uthaiye.", demoRinging: "Asli istemaal mein abhi aapka phone bajta, aur Saathi aapse baat karti.", noLink: "Yeh link adhoora hai. Apne parivaar se naya link maangiye.", oldLink: "Yeh link ab kaam nahi karta. Apne parivaar se naya link maangiye.", failed: "Call nahi lag paaya. Ek baar phir dabaiye.", helpline: "Paise ja chuke hain? Turant call kijiye", demo: "Demo: button dabane par asli call nahi hoga.", language: "Bhasha", larger: "Bade akshar" },
       hi: { question: "किसी ने फ़ोन पर पैसे या OTP माँगा?", press: "दबाइए", calling: "कॉल आ रहा है", idle: "दबाते ही साथी आपको कॉल करेगी। कुछ भी भेजने से पहले उनसे बात कीजिए।", dialing: "कॉल लगा रहे हैं…", ringing: "आपका फ़ोन अभी बजेगा। उसे उठाइए।", demoRinging: "असली इस्तेमाल में अभी आपका फ़ोन बजता, और साथी आपसे बात करती।", noLink: "यह लिंक अधूरा है। अपने परिवार से नया लिंक माँगिए।", oldLink: "यह लिंक अब काम नहीं करता। अपने परिवार से नया लिंक माँगिए।", failed: "कॉल नहीं लग पाया। एक बार फिर दबाइए।", helpline: "पैसे जा चुके हैं? तुरंत कॉल कीजिए", demo: "डेमो: बटन दबाने पर असली कॉल नहीं होगा।", language: "भाषा", larger: "बड़े अक्षर" },
       en: { question: "Did someone ask for money or an OTP on the phone?", press: "Press", calling: "Call coming", idle: "Saathi will call you as soon as you press. Talk to her before you send anything.", dialing: "Placing the call…", ringing: "Your phone will ring now. Please answer it.", demoRinging: "In real use your phone would ring now, and Saathi would talk to you.", noLink: "This link is incomplete. Ask your family for a new one.", oldLink: "This link no longer works. Ask your family for a new one.", failed: "The call didn't go through. Please press again.", helpline: "Money already gone? Call right away", demo: "Demo: pressing the button won't place a call.", language: "Language", larger: "Larger text" },
       bn: { question: "কেউ কি ফোনে টাকা বা OTP চেয়েছে?", press: "টিপুন", calling: "ফোন আসছে", idle: "টিপলেই সাথী আপনাকে ফোন করবে। কিছু পাঠানোর আগে ওনার সঙ্গে কথা বলুন।", dialing: "ফোন লাগানো হচ্ছে…", ringing: "আপনার ফোন এখনই বাজবে। ধরুন।", demoRinging: "আসল ব্যবহারে এখন আপনার ফোন বাজত, আর সাথী আপনার সঙ্গে কথা বলত।", noLink: "এই লিংকটা অসম্পূর্ণ। পরিবারের কাছে নতুন লিংক চেয়ে নিন।", oldLink: "এই লিংকটা আর কাজ করে না। পরিবারের কাছে নতুন লিংক চেয়ে নিন।", failed: "ফোন লাগেনি। আরেকবার টিপুন।", helpline: "টাকা চলে গেছে? এখনই ফোন করুন", demo: "ডেমো: বোতাম টিপলে আসল ফোন হবে না।", language: "ভাষা", larger: "বড় অক্ষর" },
@@ -97,6 +100,9 @@
 
     function paint() {
       const text = copy();
+      const brand = document.getElementById("brand");
+      brand.textContent = BRAND[asli.lang()] || BRAND.hi;
+      brand.lang = document.documentElement.lang;
       document.getElementById("question").textContent = text.question;
       document.getElementById("helpline").textContent = text.helpline;
       document.getElementById("demo-banner").textContent = text.demo;

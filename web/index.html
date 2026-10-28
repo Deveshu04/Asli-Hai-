@@ -8,7 +8,7 @@
   <title>Asli hai? — check before a parent pays</title>
   <script>
     (function (d) {
-      var known = ["hi", "en", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
+      var known = ["hi", "en", "hi-Latn", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
       var l = null;
       try {
         l = localStorage.getItem("asli-lang");
@@ -24,13 +24,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body class="home">
   <a class="skip" href="#main" data-i18n="skip.content">Skip to content</a>
 
   <header class="bar">
-    <a class="mark" href="./" lang="hi">असली है?</a>
+    <a class="mark" href="./" data-i18n="brand">Asli hai?</a>
     <nav data-i18n-label="nav.label" aria-label="Sections">
       <a href="#how" data-i18n="nav.how">How it works</a>
       <a href="#demo" data-i18n="nav.demo">Watch a check</a>
@@ -41,6 +41,7 @@
         <span data-i18n="prefs.language">Language</span>
         <select data-lang-select>
           <option value="en" lang="en">English</option>
+          <option value="hi-Latn" lang="hi-Latn">Hinglish</option>
           <option value="hi" lang="hi">हिंदी</option>
           <option value="bn" lang="bn">বাংলা</option>
           <option value="mr" lang="mr">मराठी</option>
@@ -61,7 +62,7 @@
   <main id="main" tabindex="-1">
     <section class="hero" aria-labelledby="hero-title">
       <blockquote>
-        <span lang="hi">“पापा, एक्सीडेंट हो गया है। जल्दी पैसे भेजो।”</span>
+        <span data-i18n="hero.quote">“Papa, I've had an accident. Send money quickly.”</span>
         <footer data-i18n="hero.footer">The kind of call that comes minutes before a scam transfer.</footer>
       </blockquote>
       <h1 id="hero-title" data-i18n="hero.title">One tap asks the real family before a parent pays.</h1>
@@ -214,7 +215,7 @@
           </div>
         </div>
         <figure class="mini-seal">
-          <span class="disc" lang="hi" aria-hidden="true">दबाइए</span>
+          <span class="disc" aria-hidden="true" data-i18n="families.press">Press</span>
           <figcaption data-i18n="families.caption">What the parent sees: one large button, in their own language.</figcaption>
         </figure>
       </div>
@@ -226,7 +227,7 @@
     <p data-i18n-html="foot.about">Asli hai? is a Bolna Buildathon project. The code is on <a href="https://github.com/Deveshu04/Asli-Hai-">GitHub</a>.</p>
   </footer>
 
-  <script src="site.js?v=3"></script>
-  <script src="demo.js?v=3"></script>
+  <script src="site.js?v=4"></script>
+  <script src="demo.js?v=4"></script>
 </body>
 </html>
