@@ -302,7 +302,7 @@ class TriggerIn(BaseModel):
 
 @app.get("/")
 def home():
-    return RedirectResponse("/web/signup.html")
+    return RedirectResponse("/web/")
 
 
 @app.get("/health")

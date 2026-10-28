@@ -49,6 +49,17 @@ sequenceDiagram
 - **No answer means the next contact.** Unanswered, busy or voicemail calls move on to the next registered contact.
 - **One verdict per session.** Repeated tool calls are ignored. Webhooks are unsigned, so the backend re-reads each call's status from Bolna's API before acting on it.
 
+## Accessibility
+
+The people using this are parents over 55, often in a panic.
+
+- **Two languages.** Every page switches between Hindi and English. The tap button defaults to Hindi and remembers its own setting, so a child setting it up in English doesn't change it for the parent.
+- **Larger text** with one button on every page.
+- **One huge button.** The parent's only control is a single, high-contrast button with a short vibration when pressed.
+- **Screen readers and keyboards.** Every form field has a label, errors are tied to their fields and focus moves to the first one, status changes are announced, and there's a skip link on every page.
+- **Calm motion.** Animation is off when the device asks for reduced motion, and the simulator can be paused or stepped one line at a time.
+- **Checked automatically.** axe-core reports no WCAG 2.2 AA violations on any page, in either language.
+
 ## Voice stacks
 
 The same graph runs on two stacks, so accuracy on Hindi names and seconds to verdict can be compared. Drills alternate between them, and every session records its `stack`.
@@ -64,7 +75,7 @@ The same graph runs on two stacks, so accuracy on Hindi names and seconds to ver
 | --- | --- |
 | `agents/` | The four Bolna graph agents: parent line and family check, one of each per stack |
 | `backend/` | FastAPI and SQLite. Places the calls, decides the verdict, fires it into the live call, sends the summary |
-| `web/` | `signup.html` registers a family; `tap.html` is the parent's one-tap button |
+| `web/` | `index.html` is the home page with a check simulator; `signup.html` registers a family; `tap.html` is the parent's one-tap button (`?demo=1` shows it without placing a call) |
 | `scripts/` | `push_agents.py` creates or updates the agents, `summary_workflow.py` builds the WhatsApp workflow, `new_session.py` runs a timed test session |
 
 ### Backend endpoints

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hi">
+<html lang="hi" data-lang="hi" data-lang-key="asli-lang-tap" data-title-en="Asli hai? button" data-title-hi="असली है?">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,38 +8,95 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="असली है?">
   <title>असली है?</title>
+  <script>
+    (function (d) {
+      try {
+        var l = localStorage.getItem("asli-lang-tap");
+        if (l === "hi" || l === "en") { d.dataset.lang = l; d.lang = l; }
+        if (localStorage.getItem("asli-text") === "large") d.classList.add("large-text");
+      } catch (e) {}
+    })(document.documentElement);
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main class="tap">
-    <h1 class="mark">असली है?</h1>
-
-    <div class="tap-center">
-      <p class="question">किसी ने फ़ोन पर पैसे या OTP माँगा?</p>
-      <button id="seal" class="seal" type="button">दबाइए</button>
-      <p id="status" class="status" role="status" aria-live="polite">दबाते ही साथी आपको कॉल करेगी। कुछ भी भेजने से पहले उनसे बात कीजिए।</p>
+<body class="tap">
+  <header class="bar">
+    <span class="mark" lang="hi">असली है?</span>
+    <div class="prefs" role="group" data-label-en="Display settings" data-label-hi="दिखावट">
+      <button type="button" class="pref" data-set-lang>English</button>
+      <button type="button" class="pref" data-text-size aria-pressed="false" data-label-en="Larger text" data-label-hi="बड़े अक्षर">A+</button>
     </div>
+  </header>
 
-    <p class="helpline">पैसे जा चुके हैं? तुरंत कॉल कीजिए <a href="tel:1930"><strong>1930</strong></a></p>
+  <main>
+    <p class="demo-banner" id="demo-banner" hidden><span class="t" lang="en">Demo: pressing the button won't place a call.</span><span class="t" lang="hi">डेमो: बटन दबाने पर असली कॉल नहीं होगा।</span></p>
+    <h1 class="question" id="question"><span class="t" lang="en">Did someone ask for money or an OTP on the phone?</span><span class="t" lang="hi">किसी ने फ़ोन पर पैसे या OTP माँगा?</span></h1>
+    <button id="seal" class="seal" type="button" aria-describedby="question status"></button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
   </main>
 
+  <footer class="helpline">
+    <span class="t" lang="en">Money already gone? Call right away</span><span class="t" lang="hi">पैसे जा चुके हैं? तुरंत कॉल कीजिए</span>
+    <a href="tel:1930">1930</a>
+  </footer>
+
+  <script src="site.js"></script>
   <script>
+    const COPY = {
+      press: { hi: "दबाइए", en: "Press" },
+      calling: { hi: "कॉल आ रहा है", en: "Call coming" },
+      idle: { hi: "दबाते ही साथी आपको कॉल करेगी। कुछ भी भेजने से पहले उनसे बात कीजिए।", en: "Saathi will call you as soon as you press. Talk to her before you send anything." },
+      dialing: { hi: "कॉल लगा रहे हैं…", en: "Placing the call…" },
+      ringing: { hi: "आपका फ़ोन अभी बजेगा। उसे उठाइए।", en: "Your phone will ring now. Please answer it." },
+      demoRinging: { hi: "असली इस्तेमाल में अभी आपका फ़ोन बजता, और साथी आपसे बात करती।", en: "In real use your phone would ring now, and Saathi would talk to you." },
+      noLink: { hi: "यह लिंक अधूरा है। अपने परिवार से नया लिंक माँगिए।", en: "This link is incomplete. Ask your family for a new one." },
+      oldLink: { hi: "यह लिंक अब काम नहीं करता। अपने परिवार से नया लिंक माँगिए।", en: "This link no longer works. Ask your family for a new one." },
+      failed: { hi: "कॉल नहीं लग पाया। एक बार फिर दबाइए।", en: "The call didn't go through. Please press again." },
+    };
+
     const seal = document.getElementById("seal");
     const status = document.getElementById("status");
-    const familyId = new URLSearchParams(location.search).get("f");
-    const IDLE_TEXT = status.textContent;
+    const params = new URLSearchParams(location.search);
+    const familyId = params.get("f");
+    const demo = params.has("demo");
+    let label = "press";
+    let message = { key: "idle", error: false };
 
-    function show(text, isError) {
-      status.textContent = text;
-      status.classList.toggle("error", Boolean(isError));
+    function paint() {
+      seal.textContent = asli.pick(COPY[label]);
+      status.textContent = asli.pick(COPY[message.key]);
+      status.classList.toggle("error", message.error);
     }
 
-    if (!familyId) {
+    function show(key, error = false) {
+      message = { key, error };
+      paint();
+    }
+
+    function ready() {
+      label = "press";
+      seal.classList.remove("calling");
+      seal.disabled = false;
+      show("idle");
+    }
+
+    function ringing(key) {
+      label = "calling";
+      seal.classList.add("calling");
+      show(key);
+      setTimeout(ready, demo ? 8000 : 45000);
+    }
+
+    asli.onLang(paint);
+    document.getElementById("demo-banner").hidden = !demo;
+    paint();
+
+    if (!familyId && !demo) {
       seal.disabled = true;
-      show("यह लिंक अधूरा है। अपने परिवार से नया लिंक माँगिए।", true);
+      show("noLink", true);
     }
 
     seal.addEventListener("click", async () => {
@@ -47,31 +104,25 @@
       seal.classList.remove("stamped");
       void seal.offsetWidth;
       seal.classList.add("stamped");
-      show("कॉल लगा रहे हैं…");
+      if (navigator.vibrate) navigator.vibrate(60);
+      show("dialing");
 
+      if (demo) {
+        setTimeout(() => ringing("demoRinging"), 900);
+        return;
+      }
       try {
         const res = await fetch("../trigger", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ family_id: familyId }),
         });
-        if (res.status === 404) {
-          show("यह लिंक अब काम नहीं करता। अपने परिवार से नया लिंक माँगिए।", true);
-          return;
-        }
+        if (res.status === 404) return show("oldLink", true);
         if (!res.ok) throw new Error(res.status);
-        seal.classList.add("calling");
-        seal.textContent = "कॉल आ रहा है";
-        show("आपका फ़ोन अभी बजेगा। उसे उठाइए।");
-        setTimeout(() => {
-          seal.classList.remove("calling");
-          seal.textContent = "दबाइए";
-          seal.disabled = false;
-          show(IDLE_TEXT);
-        }, 45000);
+        ringing("ringing");
       } catch (err) {
-        seal.disabled = false;
-        show("कॉल नहीं लग पाया। एक बार फिर दबाइए।", true);
+        show("failed", true);
+        setTimeout(() => { seal.disabled = false; }, 3000);
       }
     });
   </script>
