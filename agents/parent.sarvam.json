@@ -19,7 +19,9 @@
         },
         "task_config": {
           "hangup_after_LLMCall": false,
-          "call_terminate": 300
+          "call_terminate": 300,
+          "check_if_user_online": false,
+          "hangup_after_silence": 120
         },
         "tools_config": {
           "input": {

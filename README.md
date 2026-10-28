@@ -29,10 +29,10 @@ Bolna has to reach the backend over HTTPS, so expose port 8000 through a tunnel 
 ## Agents
 
 ```bash
-python scripts/render_agents.py           # writes build/agents/*.json with the URL and secret filled in
+python scripts/push_agents.py             # creates the agents, or updates them when AGENT_ID_* is already in .env
 ```
 
-Create each rendered agent in Bolna, then put the returned ids in `.env` as `AGENT_ID_*`.
+Re-run it whenever `agents/*.json` or `PUBLIC_BASE_URL` changes. `render_agents.py` writes the filled-in JSON to `build/agents/` without touching Bolna.
 
 ## Family summary
 

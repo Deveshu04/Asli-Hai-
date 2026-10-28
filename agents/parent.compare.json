@@ -19,7 +19,9 @@
         },
         "task_config": {
           "hangup_after_LLMCall": false,
-          "call_terminate": 300
+          "call_terminate": 300,
+          "check_if_user_online": false,
+          "hangup_after_silence": 120
         },
         "tools_config": {
           "input": {
@@ -317,8 +319,8 @@
             "stream": true,
             "provider_config": {
               "model": "sonic-3.6",
-              "voice": "PICK_A_HINDI_VOICE",
-              "voice_id": "PICK_A_HINDI_VOICE_ID",
+              "voice": "Kavita - Customer Care Agent",
+              "voice_id": "56e35e2d-6eb6-4226-ab8b-9776515a7094",
               "language": "hi"
             }
           }

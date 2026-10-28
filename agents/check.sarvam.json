@@ -20,7 +20,8 @@
         "task_config": {
           "hangup_after_LLMCall": false,
           "call_terminate": 120,
-          "voicemail": true
+          "voicemail": true,
+          "check_if_user_online": false
         },
         "tools_config": {
           "input": {
