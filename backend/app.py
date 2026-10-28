@@ -246,19 +246,20 @@ def seal_stored_words() -> None:
         log.info("sealed family words families=%d", len(rows))
 
 
-def reserve_call(phone: str, kind: str, cap: int) -> int | None:
+def reserve_call(phone: str, kind: str, cap: int, family_id: str | None = None) -> int | None:
     """Claims one of a number's hourly call slots, or None when they're used up.
 
-    A number can sit in many families, so the cap is per number. Check and alert calls get their own, higher cap,
-    so padding the rescue count can never block a real family's check. Check and claim are one statement, so
-    concurrent presses can't overshoot.
+    Rescue calls are capped per number across every family, which never blocks a check. Check and alert calls are
+    capped per family and number, so no other family's traffic can ever stop a real family's check.
+    Check and claim are one statement, so concurrent presses can't overshoot.
     """
     now = time.time()
     with db.connect() as conn:
         cur = conn.execute(
-            "INSERT INTO outbound (phone, at, kind) SELECT ?, ?, ?"
-            " WHERE (SELECT COUNT(*) FROM outbound WHERE phone = ? AND kind = ? AND at > ?) < ?",
-            (phone, now, kind, phone, kind, now - 3600, cap),
+            "INSERT INTO outbound (phone, at, kind, family_id) SELECT ?, ?, ?, ?"
+            " WHERE (SELECT COUNT(*) FROM outbound WHERE phone = ? AND kind = ? AND at > ?"
+            " AND (? IS NULL OR family_id = ?)) < ?",
+            (phone, now, kind, family_id, phone, kind, now - 3600, family_id, family_id, cap),
         )
         if cur.rowcount:
             return cur.lastrowid
@@ -389,7 +390,7 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
-        slot = reserve_call(contact["phone"], "check", CHECKS_PER_NUMBER_PER_HOUR)
+        slot = reserve_call(contact["phone"], "check", CHECKS_PER_NUMBER_PER_HOUR, session["family_id"])
         if slot is None:
             continue
         try:

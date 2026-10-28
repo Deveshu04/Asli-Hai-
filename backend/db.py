@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS outbound (
     phone TEXT NOT NULL,
     at REAL NOT NULL,
-    kind TEXT NOT NULL DEFAULT 'rescue'
+    kind TEXT NOT NULL DEFAULT 'rescue',
+    family_id TEXT
 );
 
 CREATE INDEX IF NOT EXISTS sessions_parent_run ON sessions(parent_run_id);
@@ -97,6 +98,7 @@ ADDED_COLUMNS = [
     ("sessions", "rescue_told_at", "REAL"),
     ("sessions", "retried_at", "REAL"),
     ("outbound", "kind", "TEXT NOT NULL DEFAULT 'rescue'"),
+    ("outbound", "family_id", "TEXT"),
 ]
 
 
