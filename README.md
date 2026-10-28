@@ -41,7 +41,7 @@ sequenceDiagram
 ## Safety by design
 
 - **Fixed verdict wording.** Every line that must never vary is a static node, so the LLM never improvises a verdict.
-- **The family word never reaches an LLM.** It isn't in any prompt or log line. Only `backend/verdict.py` compares it, in Latin or Devanagari script, after lowercasing and stripping spaces and punctuation.
+- **The family word never reaches an LLM.** It isn't in any prompt or log line. Only `backend/verdict.py` compares it, in English letters or the family's own script, after lowercasing and stripping spaces and punctuation.
 - **Three verdict rules:**
   - "No, I didn't call" → `child_safe`.
   - "Yes" plus the right family word → `child_confirmed`.
@@ -53,12 +53,24 @@ sequenceDiagram
 
 The people using this are parents over 55, often in a panic.
 
-- **Two languages.** Every page switches between Hindi and English. The tap button defaults to Hindi and remembers its own setting, so a child setting it up in English doesn't change it for the parent.
+- **The parent's language.** The tap button comes in all 12 call languages and opens in the one the family picked at signup. It remembers its own setting, so a child browsing the site in English doesn't change it for the parent. The home page and signup switch between Hindi and English.
 - **Larger text** with one button on every page.
 - **One huge button.** The parent's only control is a single, high-contrast button with a short vibration when pressed.
 - **Screen readers and keyboards.** Every form field has a label, errors are tied to their fields and focus moves to the first one, status changes are announced, and there's a skip link on every page.
 - **Calm motion.** Animation is off when the device asks for reduced motion, and the simulator can be paused or stepped one line at a time.
 - **Checked automatically.** axe-core reports no WCAG 2.2 AA violations on any page, in either language.
+
+## Languages
+
+Saathi speaks 12 languages: Hindi, English, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada, Malayalam, Punjabi, Odia and Assamese.
+
+- **The language is chosen at signup.** Every call opens in it through `agent_language`, and Bolna's language switching follows the caller if they clearly move to another language mid-call.
+- **One agent per role.** Each Sarvam agent carries a `multilingual_config` with a Sarvam transcriber and a female Sarvam voice per language.
+- **Every fixed safety line comes in all 12 languages**, each with its own pre-rendered audio. So does the "calling your family now" message.
+- **Greetings come from the backend.** They include the parent's and family member's names, so `backend/languages.py` builds them in the family's language for each call.
+- **The comparison stack is Hindi-only.** Families in other languages always use the Sarvam stack.
+
+The non-Hindi lines were written for this project and should be checked by a native speaker before real families rely on them.
 
 ## Voice stacks
 

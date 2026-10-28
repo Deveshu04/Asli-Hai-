@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS families (
     parent_phone TEXT NOT NULL UNIQUE,
     language TEXT NOT NULL DEFAULT 'hi',
     family_word_latin TEXT NOT NULL,
-    family_word_devanagari TEXT NOT NULL
+    family_word_native TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS contacts (

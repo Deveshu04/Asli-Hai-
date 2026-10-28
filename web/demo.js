@@ -1,7 +1,7 @@
 (function () {
   const FIXED = {
-    welcomeParent: "नमस्ते {{parent_name}} जी, मैं 'असली है?' लाइन से साथी बोल रही हूँ। अभी आपको किसने कॉल किया था, और वो क्या माँग रहे थे?",
-    welcomeCheck: "नमस्ते {{child_name}}, मैं 'असली है?' से बोल रही हूँ, {{parent_name}} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {{claimed_name}} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
+    welcomeParent: "नमस्ते {{parent_name}} जी, मैं साथी, असली है से बोल रही हूँ। अभी आपको किसने कॉल किया था, और वो क्या माँग रहे थे?",
+    welcomeCheck: "नमस्ते {{child_name}}, मैं साथी, असली है से बोल रही हूँ, {{parent_name}} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {{claimed_name}} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
     preCall: "मैं अभी आपके परिवार को कॉल कर रही हूँ। लाइन पर बने रहिए।",
     verdictFake: "अच्छी ख़बर। मैंने आपके परिवार से बात कर ली है। वो बिल्कुल ठीक हैं और उन्होंने आपको कोई कॉल नहीं किया। वो कॉल नकली था। कोई पैसा या OTP मत दीजिए, और उस नंबर को ब्लॉक कर दीजिए।",
     verdictUnconfirmed: "अभी मैं आपके परिवार से पक्की बात नहीं कर पाई। जब तक आप ख़ुद उनसे उनके पुराने नंबर पर बात न कर लें, कोई पैसा मत भेजिए। असली मुसीबत होगी तो वो थोड़ा इंतज़ार कर सकती है।",
@@ -36,7 +36,7 @@
     { t: 0, phone: "parent", event: { en: "Sunita presses the yellow button", hi: "सुनीता पीला बटन दबाती हैं" } },
     { t: 5, phone: "parent", state: "on", event: { en: "Saathi calls Sunita back", hi: "साथी सुनीता को वापस कॉल करती है" } },
     { t: 7, phone: "parent", who: "saathi", fixed: true, hi: fill(FIXED.welcomeParent, { parent_name: "सुनीता" }),
-      en: "Namaste Sunita ji, this is Saathi from the 'Asli hai?' line. Who called you just now, and what were they asking for?" },
+      en: "Namaste Sunita ji, I'm Saathi, speaking from Asli hai. Who called you just now, and what were they asking for?" },
   ];
 
   const callFamily = (claimed, claimedEn) => [
@@ -44,7 +44,7 @@
     { t: 23, phone: "family", state: "rahulRinging", event: { en: "Rahul's phone rings", hi: "राहुल का फ़ोन बजता है" } },
     { t: 30, phone: "family", state: "rahulOn", who: "check", fixed: true,
       hi: fill(FIXED.welcomeCheck, { child_name: "राहुल", parent_name: "सुनीता", claimed_name: claimed }),
-      en: `Namaste Rahul, this is 'Asli hai?', Sunita ji's safety line. Someone just called her pretending to be ${claimedEn} and asked for money. Did you just call her?` },
+      en: `Namaste Rahul, I'm Saathi, speaking from Asli hai, Sunita ji's safety line. Someone just called her pretending to be ${claimedEn} and asked for money. Did you just call her?` },
     { t: 32, phone: "parent", who: "saathi", hi: "घबराइए मत, मैं आपके साथ हूँ। उस नंबर का फ़ोन मत उठाइए, और उसे वापस कॉल मत कीजिए।",
       en: "Don't worry, I'm with you. Don't answer that number, and don't call it back." },
   ];
@@ -122,6 +122,121 @@
         verdict: { en: "Not confirmed. Don't pay yet.", hi: "पक्का नहीं। अभी पैसे मत भेजिए।", tone: "warn" } },
     ],
   };
+
+  const VOICES = [
+    {
+      "code": "hi",
+      "native": "हिंदी",
+      "en": "Hindi",
+      "hi": "हिंदी",
+      "voice": "Aparna, Sarvam bulbul:v4-flash",
+      "line": "अच्छी ख़बर। मैंने आपके परिवार से बात कर ली है। वो बिल्कुल ठीक हैं और उन्होंने आपको कोई कॉल नहीं किया। वो कॉल नकली था। कोई पैसा या OTP मत दीजिए, और उस नंबर को ब्लॉक कर दीजिए।"
+    },
+    {
+      "code": "en",
+      "native": "English",
+      "en": "English",
+      "hi": "अंग्रेज़ी",
+      "voice": "Aparna, Sarvam bulbul:v4-flash",
+      "line": "Good news. I've spoken to your family. They are completely fine, and they did not call you. That call was fake. Don't give any money or OTP, and block that number."
+    },
+    {
+      "code": "bn",
+      "native": "বাংলা",
+      "en": "Bengali",
+      "hi": "बांग्ला",
+      "voice": "Roopa, Sarvam bulbul:v4-flash",
+      "line": "ভালো খবর। আমি আপনার পরিবারের সঙ্গে কথা বলেছি। ওনারা একদম ভালো আছেন, আর ওনারা আপনাকে কোনো ফোন করেননি। ওই ফোনটা ভুয়ো ছিল। কোনো টাকা বা OTP দেবেন না, আর ওই নম্বরটা ব্লক করে দিন।"
+    },
+    {
+      "code": "mr",
+      "native": "मराठी",
+      "en": "Marathi",
+      "hi": "मराठी",
+      "voice": "Ishita, Sarvam bulbul:v4-flash",
+      "line": "चांगली बातमी. मी तुमच्या कुटुंबाशी बोलले आहे. ते अगदी ठीक आहेत आणि त्यांनी तुम्हाला कोणताही फोन केला नाही. तो फोन खोटा होता. कोणतेही पैसे किंवा OTP देऊ नका, आणि तो नंबर ब्लॉक करा."
+    },
+    {
+      "code": "te",
+      "native": "తెలుగు",
+      "en": "Telugu",
+      "hi": "तेलुगु",
+      "voice": "Kavitha, Sarvam bulbul:v4-flash",
+      "line": "శుభవార్త. నేను మీ కుటుంబంతో మాట్లాడాను. వారు పూర్తిగా క్షేమంగా ఉన్నారు, వారు మీకు ఎలాంటి ఫోన్ చేయలేదు. ఆ ఫోన్ నకిలీది. ఎలాంటి డబ్బు గానీ OTP గానీ ఇవ్వకండి, ఆ నంబర్‌ను బ్లాక్ చేయండి."
+    },
+    {
+      "code": "ta",
+      "native": "தமிழ்",
+      "en": "Tamil",
+      "hi": "तमिल",
+      "voice": "Kavya, Sarvam bulbul:v3",
+      "line": "நல்ல செய்தி. நான் உங்கள் குடும்பத்தினரிடம் பேசினேன். அவர்கள் நலமாக இருக்கிறார்கள், அவர்கள் உங்களுக்கு எந்த அழைப்பும் செய்யவில்லை. அந்த அழைப்பு போலியானது. எந்தப் பணமும் OTP-யும் கொடுக்காதீர்கள், அந்த எண்ணை பிளாக் செய்யுங்கள்."
+    },
+    {
+      "code": "gu",
+      "native": "ગુજરાતી",
+      "en": "Gujarati",
+      "hi": "गुजराती",
+      "voice": "Pooja, Sarvam bulbul:v4-flash",
+      "line": "સારા સમાચાર. મેં તમારા પરિવાર સાથે વાત કરી લીધી છે. તેઓ બિલકુલ ઠીક છે અને તેમણે તમને કોઈ ફોન કર્યો નથી. તે ફોન નકલી હતો. કોઈ પૈસા કે OTP ન આપશો, અને તે નંબર બ્લોક કરી દો."
+    },
+    {
+      "code": "kn",
+      "native": "ಕನ್ನಡ",
+      "en": "Kannada",
+      "hi": "कन्नड़",
+      "voice": "Chaitra, Sarvam bulbul:v4-flash",
+      "line": "ಒಳ್ಳೆಯ ಸುದ್ದಿ. ನಾನು ನಿಮ್ಮ ಕುಟುಂಬದವರೊಂದಿಗೆ ಮಾತನಾಡಿದ್ದೇನೆ. ಅವರು ಸಂಪೂರ್ಣವಾಗಿ ಚೆನ್ನಾಗಿದ್ದಾರೆ, ಮತ್ತು ಅವರು ನಿಮಗೆ ಯಾವುದೇ ಕರೆ ಮಾಡಿಲ್ಲ. ಆ ಕರೆ ನಕಲಿ ಆಗಿತ್ತು. ಯಾವುದೇ ಹಣ ಅಥವಾ OTP ಕೊಡಬೇಡಿ, ಮತ್ತು ಆ ನಂಬರ್ ಅನ್ನು ಬ್ಲಾಕ್ ಮಾಡಿ."
+    },
+    {
+      "code": "ml",
+      "native": "മലയാളം",
+      "en": "Malayalam",
+      "hi": "मलयालम",
+      "voice": "Kavya, Sarvam bulbul:v3",
+      "line": "നല്ല വാർത്ത. ഞാൻ നിങ്ങളുടെ കുടുംബവുമായി സംസാരിച്ചു. അവർ പൂർണ്ണമായും സുഖമായിരിക്കുന്നു, അവർ നിങ്ങളെ വിളിച്ചിട്ടില്ല. ആ കോൾ വ്യാജമായിരുന്നു. പണമോ OTP-യോ ഒന്നും കൊടുക്കരുത്, ആ നമ്പർ ബ്ലോക്ക് ചെയ്യുക."
+    },
+    {
+      "code": "pa",
+      "native": "ਪੰਜਾਬੀ",
+      "en": "Punjabi",
+      "hi": "पंजाबी",
+      "voice": "Kavya, Sarvam bulbul:v3",
+      "line": "ਚੰਗੀ ਖ਼ਬਰ। ਮੈਂ ਤੁਹਾਡੇ ਪਰਿਵਾਰ ਨਾਲ ਗੱਲ ਕਰ ਲਈ ਹੈ। ਉਹ ਬਿਲਕੁਲ ਠੀਕ ਹਨ ਅਤੇ ਉਨ੍ਹਾਂ ਨੇ ਤੁਹਾਨੂੰ ਕੋਈ ਫ਼ੋਨ ਨਹੀਂ ਕੀਤਾ। ਉਹ ਫ਼ੋਨ ਨਕਲੀ ਸੀ। ਕੋਈ ਪੈਸਾ ਜਾਂ OTP ਨਾ ਦਿਓ, ਅਤੇ ਉਸ ਨੰਬਰ ਨੂੰ ਬਲੌਕ ਕਰ ਦਿਓ।"
+    },
+    {
+      "code": "od",
+      "native": "ଓଡ଼ିଆ",
+      "en": "Odia",
+      "hi": "ओड़िया",
+      "voice": "Kavya, Sarvam bulbul:v3",
+      "line": "ଭଲ ଖବର। ମୁଁ ଆପଣଙ୍କ ପରିବାର ସହ କଥା ହୋଇସାରିଛି। ସେମାନେ ସମ୍ପୂର୍ଣ୍ଣ ଭଲରେ ଅଛନ୍ତି, ଆଉ ସେମାନେ ଆପଣଙ୍କୁ କୌଣସି ଫୋନ କରିନାହାନ୍ତି। ସେହି ଫୋନଟି ନକଲି ଥିଲା। କୌଣସି ଟଙ୍କା କିମ୍ବା OTP ଦିଅନ୍ତୁ ନାହିଁ, ଆଉ ସେହି ନମ୍ବରକୁ ବ୍ଲକ କରିଦିଅନ୍ତୁ।"
+    },
+    {
+      "code": "as",
+      "native": "অসমীয়া",
+      "en": "Assamese",
+      "hi": "असमिया",
+      "voice": "Kavya, Sarvam bulbul:v3",
+      "line": "ভাল খবৰ। মই আপোনাৰ পৰিয়ালৰ সৈতে কথা পাতিলোঁ। তেওঁলোক সম্পূৰ্ণ ভালে আছে, আৰু তেওঁলোকে আপোনাক কোনো ফোন কৰা নাই। সেই ফোনটো ভুৱা আছিল। কোনো টকা বা OTP নিদিব, আৰু সেই নম্বৰটো ব্লক কৰি দিয়ক।"
+    }
+  ];
+
+  const choice = document.getElementById("lang-choice");
+  if (choice) {
+    const say = document.getElementById("lang-line");
+    const voice = document.getElementById("lang-voice");
+    choice.innerHTML = VOICES.map((v) => `<option value="${v.code}" lang="${v.code === "od" ? "or" : v.code}">${v.native}${v.code === "en" ? "" : " (" + v.en + ")"}</option>`).join("");
+    const paintVoice = () => {
+      const v = VOICES.find((x) => x.code === choice.value);
+      say.lang = v.code === "od" ? "or" : v.code;
+      say.textContent = v.line;
+      voice.textContent = window.asli.pick({ en: "Voice: ", hi: "आवाज़: " }) + v.voice;
+    };
+    choice.addEventListener("change", paintVoice);
+    window.asli.onLang(paintVoice);
+    paintVoice();
+  }
 
   const SPEED = 3;
   const sim = document.getElementById("sim");

@@ -2,7 +2,7 @@
   "agent_config": {
     "agent_name": "Asli hai? Family check (Compare)",
     "agent_type": "other",
-    "agent_welcome_message": "नमस्ते {{child_name}}, मैं 'असली है?' से बोल रही हूँ, {{parent_name}} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {{claimed_name}} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
+    "agent_welcome_message": "{{greeting}}",
     "webhook_url": "https://YOUR-BACKEND/webhooks/bolna",
     "tasks": [
       {
@@ -87,7 +87,7 @@
               "temperature": 1,
               "max_tokens": 120,
               "routing_model": "gpt-4.1-mini",
-              "agent_information": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now.",
+              "agent_information": "You are Saathi from the 'Asli hai?' safety line, calling {{child_name}} about a call their parent {{parent_name}} just got. Speak the language of the call, in its own script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now.",
               "current_node_id": "ask_called",
               "nodes": [
                 {
@@ -219,7 +219,7 @@
   },
   "agent_prompts": {
     "task_1": {
-      "system_prompt": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now."
+      "system_prompt": "You are Saathi from the 'Asli hai?' safety line, calling {{child_name}} about a call their parent {{parent_name}} just got. Speak the language of the call, in its own script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now."
     }
   }
 }

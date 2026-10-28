@@ -10,7 +10,7 @@
 
   function applyLang(lang) {
     root.dataset.lang = lang;
-    root.lang = lang;
+    root.lang = lang === "od" ? "or" : lang;
     const suffix = lang === "hi" ? "Hi" : "En";
     if (root.dataset["title" + suffix]) document.title = root.dataset["title" + suffix];
     document.querySelectorAll("[data-ph-en]").forEach((el) => {
@@ -18,6 +18,9 @@
     });
     document.querySelectorAll("[data-label-en]").forEach((el) => {
       el.setAttribute("aria-label", el.dataset["label" + suffix]);
+    });
+    document.querySelectorAll("[data-lang-select]").forEach((select) => {
+      select.value = lang;
     });
     document.querySelectorAll("[data-set-lang]").forEach((btn) => {
       const other = lang === "hi" ? "en" : "hi";
@@ -41,6 +44,13 @@
       const large = !root.classList.contains("large-text");
       save("asli-text", large ? "large" : "normal");
       applySize(large);
+    }
+  });
+
+  document.addEventListener("change", (event) => {
+    if (event.target.matches("[data-lang-select]")) {
+      save(root.dataset.langKey || "asli-lang", event.target.value);
+      applyLang(event.target.value);
     }
   });
 

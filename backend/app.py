@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import db, notify
 from .bolna import Bolna
+from .languages import DEFAULT_LANGUAGE, LANGUAGES, greeting, in_script
 from .stacks import DEFAULT_STACK, STACKS, Session, pick_stack, stack_for_agent
 from .verdict import CHILD_CONFIRMED, CHILD_SAFE, NOT_CONFIRMED, decide, normalize_word
 
@@ -217,7 +218,7 @@ def rearm_timers() -> None:
 
 async def dial(session_id: str, start: int) -> None:
     session = db.one("SELECT * FROM sessions WHERE id = ?", session_id)
-    family = db.one("SELECT parent_name FROM families WHERE id = ?", session["family_id"])
+    family = db.one("SELECT parent_name, language FROM families WHERE id = ?", session["family_id"])
     order = contact_order(family_contacts(session["family_id"]), session["claimed_name"])
     agent_id = STACKS.get(session["stack"], {}).get("check")
     if not agent_id:
@@ -227,14 +228,17 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
+        claimed_name = session["claimed_name"] or contact["name"]
         user_data = {
             "session_id": session_id,
             "child_name": contact["name"],
             "parent_name": family["parent_name"],
-            "claimed_name": session["claimed_name"] or contact["name"],
+            "claimed_name": claimed_name,
             "amount_asked": session["amount"] or 0,
             "did_call": "Unsure",
             "spoken_word": "",
+            "agent_language": family["language"],
+            "greeting": greeting(family["language"], "check", child_name=contact["name"], parent_name=family["parent_name"], claimed_name=claimed_name),
         }
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], user_data)
@@ -279,6 +283,16 @@ def send_summary(session_id: str) -> None:
     rt.spawn(notify.deliver(rt.sender, session_id, contacts, summary_text(session, family)))
 
 
+def parent_user_data(session_id: str, family: dict) -> dict:
+    return {
+        "session_id": session_id,
+        "parent_name": family["parent_name"],
+        "timezone": "Asia/Kolkata",
+        "agent_language": family["language"],
+        "greeting": greeting(family["language"], "parent", parent_name=family["parent_name"]),
+    }
+
+
 class ContactIn(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     relation: str = Field("", max_length=40)
@@ -288,10 +302,10 @@ class ContactIn(BaseModel):
 class FamilyIn(BaseModel):
     parent_name: str = Field(min_length=1, max_length=60)
     parent_phone: str = Field(max_length=20)
-    language: str = Field("hi", max_length=10)
+    language: str = Field(DEFAULT_LANGUAGE, max_length=10)
     contacts: list[ContactIn] = Field(min_length=1, max_length=2)
     family_word_latin: str = Field(min_length=1, max_length=60)
-    family_word_devanagari: str = Field(min_length=1, max_length=60)
+    family_word_native: str = Field("", max_length=60)
     invite_code: str = ""
 
 
@@ -320,23 +334,26 @@ def register_family(body: FamilyIn):
         phones = [to_e164(c.phone) for c in body.contacts]
     except ValueError:
         raise HTTPException(400, "Use a 10-digit Indian mobile number for every phone.")
-    if not normalize_word(body.family_word_latin) or not re.search(r"[ऀ-ॿ]", body.family_word_devanagari):
-        raise HTTPException(400, "Type the family word in English letters and in Hindi letters.")
+    if body.language not in LANGUAGES:
+        raise HTTPException(400, "Pick one of the listed languages.")
+    native = body.family_word_native.strip() or body.family_word_latin.strip()
+    if not normalize_word(body.family_word_latin) or not in_script(native, body.language):
+        raise HTTPException(400, f"Type the family word in English letters and in {LANGUAGES[body.language]['name']} letters.")
     if db.one("SELECT 1 FROM families WHERE parent_phone = ?", parent_phone):
         raise HTTPException(409, "This parent's number is already registered.")
 
     family_id = new_id("f")
     with db.connect() as conn:
         conn.execute(
-            "INSERT INTO families (id, parent_name, parent_phone, language, family_word_latin, family_word_devanagari) VALUES (?, ?, ?, ?, ?, ?)",
-            (family_id, body.parent_name.strip(), parent_phone, body.language, body.family_word_latin.strip(), body.family_word_devanagari.strip()),
+            "INSERT INTO families (id, parent_name, parent_phone, language, family_word_latin, family_word_native) VALUES (?, ?, ?, ?, ?, ?)",
+            (family_id, body.parent_name.strip(), parent_phone, body.language, body.family_word_latin.strip(), native),
         )
         conn.executemany(
             "INSERT INTO contacts (family_id, name, relation, phone, priority) VALUES (?, ?, ?, ?, ?)",
             [(family_id, c.name.strip(), c.relation.strip(), phone, i) for i, (c, phone) in enumerate(zip(body.contacts, phones), 1)],
         )
     log.info("family registered id=%s contacts=%d", family_id, len(phones))
-    return {"family_id": family_id, "tap_url": f"/web/tap.html?f={family_id}"}
+    return {"family_id": family_id, "tap_url": f"/web/tap.html?f={family_id}&l={body.language}"}
 
 
 @app.post("/trigger")
@@ -358,7 +375,8 @@ async def trigger(body: TriggerIn):
         family["id"], body.drill_id, body.drill_id, now - DRILL_WINDOW_S,
     )
     drill_id = drill["id"] if drill else None
-    stack = pick_stack(Session(drill_id))
+    # The comparison stack only speaks Hindi.
+    stack = pick_stack(Session(drill_id)) if family["language"] == DEFAULT_LANGUAGE else "sarvam"
     agent_id = STACKS.get(stack, {}).get("parent")
     if not agent_id:
         raise HTTPException(503, f"No parent agent configured for stack {stack}")
@@ -369,7 +387,7 @@ async def trigger(body: TriggerIn):
     if drill_id:
         db.execute("UPDATE drills SET used_line = 1, stack = ? WHERE id = ?", stack, drill_id)
 
-    user_data = {"session_id": session_id, "parent_name": family["parent_name"], "timezone": "Asia/Kolkata"}
+    user_data = parent_user_data(session_id, family)
     try:
         run_id = await rt.bolna.place_call(agent_id, family["parent_phone"], user_data)
     except Exception as exc:
@@ -486,7 +504,7 @@ def lookup(contact_number: str = "", agent_id: str = "", execution_id: str = "")
     stack = stack_for_agent(agent_id) or DEFAULT_STACK
     db.execute("INSERT INTO sessions (id, family_id, parent_run_id, stack, started_at) VALUES (?, ?, ?, ?, ?)",
                session_id, family["id"], execution_id or None, stack, time.time())
-    return {"session_id": session_id, "parent_name": family["parent_name"], "timezone": "Asia/Kolkata"}
+    return parent_user_data(session_id, family)
 
 
 app.mount("/web", StaticFiles(directory=WEB_DIR, html=True), name="web")

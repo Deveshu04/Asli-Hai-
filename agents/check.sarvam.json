@@ -2,7 +2,7 @@
   "agent_config": {
     "agent_name": "Asli hai? Family check (Sarvam)",
     "agent_type": "other",
-    "agent_welcome_message": "नमस्ते {{child_name}}, मैं 'असली है?' से बोल रही हूँ, {{parent_name}} जी की सुरक्षा लाइन। अभी उन्हें एक कॉल आया जिसमें किसी ने {{claimed_name}} बनकर पैसे माँगे। क्या आपने अभी उन्हें कॉल किया था?",
+    "agent_welcome_message": "{{greeting}}",
     "webhook_url": "https://YOUR-BACKEND/webhooks/bolna",
     "tasks": [
       {
@@ -87,7 +87,7 @@
               "temperature": 1,
               "max_tokens": 120,
               "routing_model": "gpt-4.1-mini",
-              "agent_information": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now.",
+              "agent_information": "You are Saathi from the 'Asli hai?' safety line, calling {{child_name}} about a call their parent {{parent_name}} just got. Speak the language of the call, in its own script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now.",
               "current_node_id": "ask_called",
               "nodes": [
                 {
@@ -188,7 +188,20 @@
                 {
                   "id": "thanks",
                   "node_type": "static",
-                  "static_message": "शुक्रिया। मैं उन्हें अभी बता रही हूँ। नमस्ते।",
+                  "static_message": {
+                    "hi": "शुक्रिया। मैं उन्हें अभी बता रही हूँ। नमस्ते।",
+                    "en": "Thank you. I'm letting them know right now. Namaste.",
+                    "bn": "ধন্যবাদ। আমি এখনই ওনাকে জানাচ্ছি। নমস্কার।",
+                    "mr": "धन्यवाद. मी त्यांना आत्ताच सांगते. नमस्कार.",
+                    "te": "ధన్యవాదాలు. నేను ఇప్పుడే వారికి చెబుతున్నాను. నమస్తే.",
+                    "ta": "நன்றி. நான் இப்போதே அவர்களிடம் சொல்கிறேன். வணக்கம்.",
+                    "gu": "આભાર. હું તેમને હમણાં જ જણાવું છું. નમસ્તે.",
+                    "kn": "ಧನ್ಯವಾದಗಳು. ನಾನು ಈಗಲೇ ಅವರಿಗೆ ತಿಳಿಸುತ್ತಿದ್ದೇನೆ. ನಮಸ್ಕಾರ.",
+                    "ml": "നന്ദി. ഞാൻ ഇപ്പോൾ തന്നെ അവരെ അറിയിക്കുന്നു. നമസ്കാരം.",
+                    "pa": "ਧੰਨਵਾਦ। ਮੈਂ ਉਨ੍ਹਾਂ ਨੂੰ ਹੁਣੇ ਦੱਸ ਰਹੀ ਹਾਂ। ਸਤ ਸ੍ਰੀ ਅਕਾਲ।",
+                    "od": "ଧନ୍ୟବାଦ। ମୁଁ ଏବେ ତାଙ୍କୁ ଜଣାଉଛି। ନମସ୍କାର।",
+                    "as": "ধন্যবাদ। মই এতিয়াই তেওঁক জনাই আছোঁ। নমস্কাৰ।"
+                  },
                   "function_call": "end_call",
                   "edges": []
                 }
@@ -216,6 +229,193 @@
               "language": "hi",
               "speed": 1.0
             }
+          },
+          "multilingual_config": {
+            "enabled": true,
+            "active_language": "hi",
+            "language_switch_trigger": "requested_or_auto_detected",
+            "languages": {
+              "hi": {
+                "transcriber": {
+                  "language": "hi"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Aparna (Customer)",
+                    "voice_id": "aparna_hi_customer",
+                    "language": "hi",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "en": {
+                "transcriber": {
+                  "language": "en"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Aparna (Companion)",
+                    "voice_id": "aparna_en_companion",
+                    "language": "en",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "bn": {
+                "transcriber": {
+                  "language": "bn"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Roopa (Conversational)",
+                    "voice_id": "roopa_bn_conversational",
+                    "language": "bn",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "mr": {
+                "transcriber": {
+                  "language": "mr"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Ishita (Conversational)",
+                    "voice_id": "ishita_mr_conversational",
+                    "language": "mr",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "te": {
+                "transcriber": {
+                  "language": "te"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Kavitha (Conversation)",
+                    "voice_id": "kavitha_te_conversation",
+                    "language": "te",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "ta": {
+                "transcriber": {
+                  "language": "ta"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v3",
+                    "voice": "Kavya",
+                    "voice_id": "kavya",
+                    "language": "ta",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "gu": {
+                "transcriber": {
+                  "language": "gu"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Pooja (Customer)",
+                    "voice_id": "pooja_gu_customer",
+                    "language": "gu",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "kn": {
+                "transcriber": {
+                  "language": "kn"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v4-flash",
+                    "voice": "Chaitra (Conversation)",
+                    "voice_id": "chaitra_kn_conversation",
+                    "language": "kn",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "ml": {
+                "transcriber": {
+                  "language": "ml"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v3",
+                    "voice": "Kavya",
+                    "voice_id": "kavya",
+                    "language": "ml",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "pa": {
+                "transcriber": {
+                  "language": "pa"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v3",
+                    "voice": "Kavya",
+                    "voice_id": "kavya",
+                    "language": "pa",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "od": {
+                "transcriber": {
+                  "language": "od"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v3",
+                    "voice": "Kavya",
+                    "voice_id": "kavya",
+                    "language": "od",
+                    "speed": 1.0
+                  }
+                }
+              },
+              "as": {
+                "transcriber": {
+                  "language": "as"
+                },
+                "synthesizer": {
+                  "provider": "sarvam",
+                  "provider_config": {
+                    "model": "bulbul:v3",
+                    "voice": "Kavya",
+                    "voice_id": "kavya",
+                    "language": "as",
+                    "speed": 1.0
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -223,7 +423,7 @@
   },
   "agent_prompts": {
     "task_1": {
-      "system_prompt": "You are the 'Asli hai?' safety line calling {{child_name}} about a call their parent {{parent_name}} just got. Speak simple Hindi in Devanagari script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now."
+      "system_prompt": "You are Saathi from the 'Asli hai?' safety line, calling {{child_name}} about a call their parent {{parent_name}} just got. Speak the language of the call, in its own script, one short sentence at a time. Never reveal the family word or the parent's number. If someone other than {{child_name}} answers, ask them to have {{child_name}} call their parent now."
     }
   }
 }

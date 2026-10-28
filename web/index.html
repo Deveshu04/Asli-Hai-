@@ -44,8 +44,8 @@
       </blockquote>
       <h1 id="hero-title"><span class="t" lang="en">One tap asks the real family before a parent pays.</span><span class="t" lang="hi">पैसे भेजने से पहले, एक बटन असली परिवार से पूछ लेता है।</span></h1>
       <p>
-        <span class="t" lang="en">Asli hai? calls the parent back, then calls the family member the caller pretended to be, while the parent stays on the line. Then it tells them in plain Hindi whether the call was genuine.</span>
-        <span class="t" lang="hi">असली है? माता-पिता को वापस कॉल करता है, और जिस परिवार वाले के नाम से कॉल आया था उसे भी कॉल करता है, जब तक माता-पिता लाइन पर रहते हैं। फिर सीधी हिंदी में बताता है कि कॉल असली था या नहीं।</span>
+        <span class="t" lang="en">Asli hai? calls the parent back, then calls the family member the caller pretended to be, while the parent stays on the line. Then it tells them, in their own language, whether the call was genuine.</span>
+        <span class="t" lang="hi">असली है? माता-पिता को वापस कॉल करता है, और जिस परिवार वाले के नाम से कॉल आया था उसे भी कॉल करता है, जब तक माता-पिता लाइन पर रहते हैं। फिर उनकी अपनी भाषा में बताता है कि कॉल असली था या नहीं।</span>
       </p>
       <div class="actions">
         <a class="button primary" href="#demo"><span class="t" lang="en">Watch a check</span><span class="t" lang="hi">जाँच देखिए</span></a>
@@ -154,9 +154,25 @@
           <p><span class="t" lang="en">There is no such thing as a “digital arrest”. Saathi says so, tells the parent to hang up, and reads out 1930 if money already went.</span><span class="t" lang="hi">“डिजिटल अरेस्ट” जैसी कोई चीज़ नहीं होती। साथी यही बताती है, कॉल काटने को कहती है, और पैसे जा चुके हों तो 1930 बताती है।</span></p>
         </div>
         <div>
-          <h3><span class="t" lang="en">Hindi first, on any stack</span><span class="t" lang="hi">पहले हिंदी</span></h3>
-          <p><span class="t" lang="en">Sarvam listens and speaks in Hindi. The same agents also run on Deepgram and Cartesia, so every drill measures which is faster and more accurate.</span><span class="t" lang="hi">Sarvam हिंदी में सुनता और बोलता है। यही एजेंट Deepgram और Cartesia पर भी चलते हैं, ताकि हर अभ्यास में देखा जा सके कि कौन तेज़ और सटीक है।</span></p>
+          <h3><span class="t" lang="en">In the family's own language</span><span class="t" lang="hi">परिवार की अपनी भाषा में</span></h3>
+          <p><span class="t" lang="en">Saathi listens and speaks in 12 languages through Sarvam, chosen when the family registers. In Hindi the same agents also run on Deepgram and Cartesia, so drills measure which is faster and more accurate.</span><span class="t" lang="hi">साथी Sarvam के ज़रिए 12 भाषाओं में सुनती और बोलती है, जो परिवार जुड़ते समय चुनता है। हिंदी में यही एजेंट Deepgram और Cartesia पर भी चलते हैं, ताकि अभ्यास में देखा जा सके कि कौन तेज़ और सटीक है।</span></p>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="languages" aria-labelledby="languages-title">
+      <h2 id="languages-title"><span class="t" lang="en">Saathi speaks the family's language</span><span class="t" lang="hi">साथी परिवार की भाषा बोलती है</span></h2>
+      <p><span class="t" lang="en">Twelve languages, picked when the family registers. Every call opens in that language, and every fixed safety line is written and voiced in each one.</span><span class="t" lang="hi">बारह भाषाएँ, जो परिवार जुड़ते समय चुनता है। हर कॉल उसी भाषा में शुरू होता है, और हर तय सुरक्षा संदेश हर भाषा में लिखा और रिकॉर्ड किया गया है।</span></p>
+      <div class="languages">
+        <div class="field">
+          <label for="lang-choice"><span class="t" lang="en">Pick a language</span><span class="t" lang="hi">भाषा चुनिए</span></label>
+          <select id="lang-choice"></select>
+        </div>
+        <figure class="say-box">
+          <figcaption class="voice"><span class="t" lang="en">What Saathi says when the call was fake</span><span class="t" lang="hi">कॉल नकली होने पर साथी क्या कहती है</span></figcaption>
+          <p class="say" id="lang-line" aria-live="polite"></p>
+          <p class="voice" id="lang-voice"></p>
+        </figure>
       </div>
     </section>
 

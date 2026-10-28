@@ -12,11 +12,11 @@ def normalize_word(text: str | None) -> str:
     return "".join(ch for ch in text if unicodedata.category(ch)[0] in "LMN")
 
 
-def word_matches(spoken: str | None, latin: str, devanagari: str) -> bool:
+def word_matches(spoken: str | None, latin: str, native: str) -> bool:
     heard = normalize_word(spoken)
     if not heard:
         return False
-    return heard in {w for w in (normalize_word(latin), normalize_word(devanagari)) if w}
+    return heard in {w for w in (normalize_word(latin), normalize_word(native)) if w}
 
 
 def normalize_answer(did_call: str | None) -> str:
@@ -32,6 +32,6 @@ def decide(did_call: str | None, spoken_word: str | None, family: dict, child_na
     answer = normalize_answer(did_call)
     if answer == "No":
         return CHILD_SAFE, {}
-    if answer == "Yes" and word_matches(spoken_word, family["family_word_latin"], family["family_word_devanagari"]):
+    if answer == "Yes" and word_matches(spoken_word, family["family_word_latin"], family["family_word_native"]):
         return CHILD_CONFIRMED, {"verified_name": child_name}
     return NOT_CONFIRMED, {}
