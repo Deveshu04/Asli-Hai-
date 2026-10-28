@@ -21,7 +21,9 @@
           "hangup_after_LLMCall": false,
           "call_terminate": 120,
           "voicemail": true,
-          "check_if_user_online": false
+          "check_if_user_online": false,
+          "incremental_delay": 1000,
+          "number_of_words_for_interruption": 2
         },
         "tools_config": {
           "input": {
@@ -95,6 +97,20 @@
                   "prompt": "Get a clear yes or no: did they just call {{parent_name}} asking for money or help? Repeat the question once if they are confused.",
                   "repeat_after_silence_seconds": 8,
                   "edges": [
+                    {
+                      "to_node_id": "alert_done",
+                      "condition_type": "expression",
+                      "priority": 0,
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "recipient_data.mode",
+                            "operator": "eq",
+                            "value": "alert"
+                          }
+                        ]
+                      }
+                    },
                     {
                       "to_node_id": "route_called",
                       "condition": "The person answered whether they called",
@@ -191,6 +207,13 @@
                   "static_message": "शुक्रिया। मैं उन्हें अभी बता रही हूँ। नमस्ते।",
                   "function_call": "end_call",
                   "edges": []
+                },
+                {
+                  "id": "alert_done",
+                  "node_type": "static",
+                  "static_message": "कृपया उन्हें अभी कॉल कीजिए। नमस्ते।",
+                  "function_call": "end_call",
+                  "edges": []
                 }
               ],
               "reasoning_effort": "none"
@@ -201,7 +224,7 @@
             "model": "nova-3",
             "language": "multi-hi",
             "stream": true,
-            "endpointing": 400
+            "endpointing": 700
           },
           "synthesizer": {
             "provider": "cartesia",

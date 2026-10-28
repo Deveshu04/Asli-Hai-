@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     check_run_id TEXT,
     contact_priority INTEGER,
     parent_ended_at REAL,
+    alert_started_at REAL,
     summary_sent_at REAL
 );
 
@@ -73,9 +74,15 @@ def connect():
         conn.close()
 
 
+ADDED_COLUMNS = [("sessions", "alert_started_at", "REAL")]
+
+
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, column, kind in ADDED_COLUMNS:
+            if column not in {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
 
 
 def one(sql: str, *args) -> dict | None:

@@ -30,12 +30,12 @@ sequenceDiagram
     B-->>F: WhatsApp summary
 ```
 
-1. The parent taps `tap.html`. The backend calls them with Saathi, the parent-line agent.
+1. The parent taps `tap.html`. The page asks them to hang up the other call, and 15 seconds later the backend calls them with Saathi, the parent-line agent.
 2. Saathi finds out in two questions who called, what they asked for and how much.
 3. For a family claim, Saathi calls `start_verification`. The backend calls the matching registered contact with the family-check agent while the parent waits.
 4. The family member is asked one yes/no question. "No" settles it. "Yes" unlocks money, so it also needs the family word.
 5. The backend decides the verdict and fires it into the parent's live call as a Bolna event. A static node plays it in about 50 ms.
-6. Police, CBI, TRAI, courier or bank claims get a fixed message: there is no such thing as a "digital arrest", hang up, don't pay. If money already went, Saathi reads out 1930, the cybercrime helpline.
+6. Police, CBI, TRAI, courier or bank claims get a fixed message: there is no such thing as a "digital arrest", hang up, don't pay. If money already went, Saathi reads out 1930, the cybercrime helpline. Either way the backend rings the first family contact so someone calls the parent back, even if the parent hangs up early.
 7. The family gets a WhatsApp summary of what happened.
 
 ## Safety by design

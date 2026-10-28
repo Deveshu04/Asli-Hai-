@@ -21,7 +21,9 @@
           "hangup_after_LLMCall": false,
           "call_terminate": 120,
           "voicemail": true,
-          "check_if_user_online": false
+          "check_if_user_online": false,
+          "incremental_delay": 1000,
+          "number_of_words_for_interruption": 2
         },
         "tools_config": {
           "input": {
@@ -95,6 +97,20 @@
                   "prompt": "Get a clear yes or no: did they just call {{parent_name}} asking for money or help? Repeat the question once if they are confused.",
                   "repeat_after_silence_seconds": 8,
                   "edges": [
+                    {
+                      "to_node_id": "alert_done",
+                      "condition_type": "expression",
+                      "priority": 0,
+                      "expression": {
+                        "conditions": [
+                          {
+                            "variable": "recipient_data.mode",
+                            "operator": "eq",
+                            "value": "alert"
+                          }
+                        ]
+                      }
+                    },
                     {
                       "to_node_id": "route_called",
                       "condition": "The person answered whether they called",
@@ -204,6 +220,26 @@
                   },
                   "function_call": "end_call",
                   "edges": []
+                },
+                {
+                  "id": "alert_done",
+                  "node_type": "static",
+                  "static_message": {
+                    "hi": "कृपया उन्हें अभी कॉल कीजिए। नमस्ते।",
+                    "en": "Please call them now. Namaste.",
+                    "bn": "দয়া করে এখনই ওনাকে ফোন করুন। নমস্কার।",
+                    "mr": "कृपया आत्ताच त्यांना फोन करा. नमस्कार.",
+                    "te": "దయచేసి ఇప్పుడే వారికి ఫోన్ చేయండి. నమస్తే.",
+                    "ta": "தயவுசெய்து இப்போதே அவர்களை அழையுங்கள். வணக்கம்.",
+                    "gu": "કૃપા કરીને હમણાં જ તેમને ફોન કરો. નમસ્તે.",
+                    "kn": "ದಯವಿಟ್ಟು ಈಗಲೇ ಅವರಿಗೆ ಕರೆ ಮಾಡಿ. ನಮಸ್ಕಾರ.",
+                    "ml": "ദയവായി ഇപ്പോൾ തന്നെ അവരെ വിളിക്കുക. നമസ്കാരം.",
+                    "pa": "ਕਿਰਪਾ ਕਰਕੇ ਹੁਣੇ ਉਨ੍ਹਾਂ ਨੂੰ ਫ਼ੋਨ ਕਰੋ। ਸਤ ਸ੍ਰੀ ਅਕਾਲ।",
+                    "od": "ଦୟାକରି ଏବେ ତାଙ୍କୁ ଫୋନ କରନ୍ତୁ। ନମସ୍କାର।",
+                    "as": "অনুগ্ৰহ কৰি এতিয়াই তেওঁক ফোন কৰক। নমস্কাৰ।"
+                  },
+                  "function_call": "end_call",
+                  "edges": []
                 }
               ],
               "reasoning_effort": "none"
@@ -214,7 +250,7 @@
             "model": "saaras:v4",
             "language": "hi",
             "stream": true,
-            "endpointing": 400,
+            "endpointing": 700,
             "keywords": "CBI, TRAI, ED, police, digital arrest, Aadhaar, courier, customs, parcel, UPI, RTGS, OTP, hospital, accident",
             "context": "An older parent in India describes a suspicious phone call where someone claiming to be family, police or a bank asked for money or an OTP. Expect rupee amounts and family names."
           },
@@ -233,7 +269,7 @@
           "multilingual_config": {
             "enabled": true,
             "active_language": "hi",
-            "language_switch_trigger": "requested_or_auto_detected",
+            "language_switch_trigger": "caller_requested",
             "languages": {
               "hi": {
                 "transcriber": {

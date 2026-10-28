@@ -21,7 +21,9 @@
           "hangup_after_LLMCall": false,
           "call_terminate": 300,
           "check_if_user_online": false,
-          "hangup_after_silence": 120
+          "hangup_after_silence": 120,
+          "incremental_delay": 1400,
+          "number_of_words_for_interruption": 3
         },
         "tools_config": {
           "input": {
@@ -73,6 +75,27 @@
                   "od": "ମୁଁ ଏବେ ଆପଣଙ୍କ ପରିବାରକୁ ଫୋନ କରୁଛି। ଦୟାକରି ଲାଇନରେ ରୁହନ୍ତୁ।",
                   "as": "মই এতিয়াই আপোনাৰ পৰিয়ালক ফোন কৰি আছোঁ। অনুগ্ৰহ কৰি লাইনত থাকক।"
                 }
+              },
+              {
+                "key": "custom_task",
+                "name": "alert_family",
+                "description": "Tell the parent's family that they just got a scam call.",
+                "parameters": {
+                  "type": "object",
+                  "required": [
+                    "session_id",
+                    "claim"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string"
+                    },
+                    "claim": {
+                      "type": "string",
+                      "description": "authority if the caller claimed to be police or an official, paid if money or an OTP already went"
+                    }
+                  }
+                }
               }
             ],
             "tools_params": {
@@ -93,6 +116,23 @@
                 "nodes": [
                   "verifying"
                 ]
+              },
+              "alert_family": {
+                "url": "https://YOUR-BACKEND/tools/alert_family",
+                "method": "POST",
+                "param": {
+                  "session_id": "%(session_id)s",
+                  "claim": "%(claim)s"
+                },
+                "headers": {
+                  "Authorization": "Bearer YOUR_TOOL_SECRET",
+                  "Content-Type": "application/json"
+                },
+                "scope": "node",
+                "nodes": [
+                  "alert_authority",
+                  "alert_paid"
+                ]
               }
             }
           },
@@ -106,7 +146,7 @@
               "max_tokens": 150,
               "routing_model": "gpt-4.1-mini",
               "routing_max_tokens": 250,
-              "routing_instructions": "Pick the edge that matches what the parent said. If unsure, stay on the current node.",
+              "routing_instructions": "Pick the edge that matches what the parent said. If the parent mentions any family member or relative (son, daughter, beta, a name), choose the family edge even if police or officials were also mentioned. If unsure, stay on the current node.",
               "agent_information": "You are Saathi on the 'Asli hai?' safety line, speaking to {{parent_name}}, an older parent. Reply in the language of the call, in its own script, in one or two short simple sentences. Never tell them to send money. Never call a claim genuine unless you are on verdict_real. Never ask for an OTP, PIN or account number.",
               "current_node_id": "listen",
               "nodes": [
@@ -123,7 +163,7 @@
                     },
                     {
                       "to_node_id": "authority_scam",
-                      "condition": "The caller claimed to be police, CBI, ED, a court, TRAI, customs, a courier or a bank officer",
+                      "condition": "The caller claimed only to be police, CBI, ED, a court, TRAI, customs, a courier or a bank officer, and the parent did not mention any family member",
                       "parameters": {
                         "claimed_authority": {
                           "type": "string",
@@ -143,7 +183,7 @@
                     },
                     {
                       "to_node_id": "verifying",
-                      "condition": "The caller claimed to be a family member or friend who needs money or help",
+                      "condition": "The caller claimed to be, or the parent mentions, a family member or friend (son, daughter, grandchild, relative or a name) who needs money or help, even if police, a hospital or an official was also mentioned",
                       "parameters": {
                         "claimed_name": {
                           "type": "string",
@@ -309,7 +349,7 @@
                   },
                   "edges": [
                     {
-                      "to_node_id": "aftercare",
+                      "to_node_id": "alert_authority",
                       "condition_type": "unconditional"
                     }
                   ]
@@ -331,6 +371,28 @@
                     "od": "ଘାବରନ୍ତୁ ନାହିଁ, କିନ୍ତୁ ଏବେ ତୁରନ୍ତ 1930ରେ ଫୋନ କରନ୍ତୁ, ପ୍ରଥମ କିଛି ଘଣ୍ଟା ସବୁଠାରୁ ଜରୁରୀ। ତା'ପରେ ଆପଣଙ୍କ ବ୍ୟାଙ୍କକୁ ମଧ୍ୟ ଫୋନ କରନ୍ତୁ। ମୁଁ ଏବେ ଆପଣଙ୍କ ପରିବାରକୁ ଖବର ଦେଉଛି।",
                     "as": "আতংকিত নহ'ব, কিন্তু এতিয়াই 1930 ত ফোন কৰক, প্ৰথম কেইঘণ্টামানেই আটাইতকৈ গুৰুত্বপূৰ্ণ। তাৰ পিছত আপোনাৰ বেংকলৈও ফোন কৰক। মই এতিয়াই আপোনাৰ পৰিয়ালক খবৰ দি আছোঁ।"
                   },
+                  "edges": [
+                    {
+                      "to_node_id": "alert_paid",
+                      "condition_type": "unconditional"
+                    }
+                  ]
+                },
+                {
+                  "id": "alert_authority",
+                  "prompt": "Call @alert_family now with session_id {{session_id}} and claim authority. Then reassure the parent in one short sentence that the family is being told.",
+                  "function_call": "alert_family",
+                  "edges": [
+                    {
+                      "to_node_id": "aftercare",
+                      "condition_type": "unconditional"
+                    }
+                  ]
+                },
+                {
+                  "id": "alert_paid",
+                  "prompt": "Call @alert_family now with session_id {{session_id}} and claim paid. Then reassure the parent in one short sentence that the family is being told.",
+                  "function_call": "alert_family",
                   "edges": [
                     {
                       "to_node_id": "aftercare",
@@ -390,7 +452,7 @@
             "model": "saaras:v4",
             "language": "hi",
             "stream": true,
-            "endpointing": 700,
+            "endpointing": 1200,
             "keywords": "CBI, TRAI, ED, police, digital arrest, Aadhaar, courier, customs, parcel, UPI, RTGS, OTP, hospital, accident",
             "context": "An older parent in India describes a suspicious phone call where someone claiming to be family, police or a bank asked for money or an OTP. Expect rupee amounts and family names."
           },
@@ -409,7 +471,7 @@
           "multilingual_config": {
             "enabled": true,
             "active_language": "hi",
-            "language_switch_trigger": "requested_or_auto_detected",
+            "language_switch_trigger": "caller_requested",
             "languages": {
               "hi": {
                 "transcriber": {
