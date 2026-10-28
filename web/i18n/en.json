@@ -123,6 +123,7 @@
   "signup.profiles": "Everyone you've set up on this phone",
   "signup.addAnother": "Add another person",
   "err.required": "Fill this in.",
+  "err.nameChars": "Use only letters and spaces.",
   "err.phone": "Use a 10-digit Indian mobile number.",
   "err.contactPair": "Add a mobile number for this person, or clear their name.",
   "err.contactName": "Add this person's name.",

@@ -49,7 +49,7 @@ sequenceDiagram
 ## Safety by design
 
 - **Fixed verdict wording.** Every line that must never vary is a static node, so the LLM never improvises a verdict.
-- **The family word never reaches an LLM.** It isn't in any prompt or log line. Only `backend/verdict.py` compares it, in English letters or the family's own script, after lowercasing and stripping spaces and punctuation.
+- **The stored family word never reaches an LLM.** It's kept only as a keyed hash (`WORD_KEY`, or `TOOL_SECRET` when that's unset), it isn't in any prompt or log line, and only `backend/verdict.py` compares it, in English letters or the family's own script, after lowercasing and stripping spaces and punctuation. The family member's spoken answer does go through speech-to-text and the check agent before it reaches the backend.
 - **Three verdict rules:**
   - "No, I didn't call" → `child_safe`.
   - "Yes" plus the right family word → `child_confirmed`.
@@ -65,6 +65,15 @@ sequenceDiagram
 
   Safety lines can't be talked over. A post-call audit, the `guardrail_breach` disposition, checks every transcript, and the backend logs any call it flags.
 - **Several people, one setup.** A family member can protect a mother, a father and a sister from the same phone. Each gets their own button link, and the signup page lists everyone added in that visit.
+- **Abuse limits.**
+  - Names may hold only letters and spaces, because they're spoken aloud and put into agent prompts.
+  - Each person gets at most 20 presses an hour.
+  - Any one number gets at most 15 family calls an hour, across every family.
+  - Wrong invite codes lock signup for 15 minutes after 30 tries.
+  - Requests over 64 KB are refused.
+  - The API docs pages are off.
+  - Logs carry neither tap-link keys nor phone numbers from query strings.
+  - Every page sends a strict content policy, no-referrer, and frame and sniffing protection.
 - **Two calls at once.** The rescue call needs a Bolna account that allows at least 2 concurrent calls. Set `RESCUE_CALLS=off` to go back to one call at a time.
 
 ## Accessibility

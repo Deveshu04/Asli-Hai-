@@ -2,6 +2,7 @@
 <html lang="en" data-lang="en" data-i18n-page data-i18n-title="title.signup">
 <head>
   <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#e4edf5">
   <title>Register your family · Asli hai?</title>
@@ -70,7 +71,7 @@
         <div class="ob-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42c1.5-8.5 7.5-13 15-13s13.5 4.5 15 13"/></svg></div>
         <h1 tabindex="-1"><label for="parent_name" id="q-parentName"></label></h1>
         <p class="ob-hint" id="h-parentName"></p>
-        <input id="parent_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.parentNamePh" placeholder="Sunita" aria-describedby="h-parentName parent_name-error">
+        <input id="parent_name" class="ob-input" autocomplete="off" maxlength="40" data-i18n-ph="signup.parentNamePh" placeholder="Sunita" aria-describedby="h-parentName parent_name-error">
         <p class="ob-error" id="parent_name-error" role="alert" hidden></p>
       </section>
 
@@ -94,7 +95,7 @@
         <h1 tabindex="-1" id="q-first"></h1>
         <p class="ob-hint" id="h-first"></p>
         <label class="ob-label" for="c1_name" data-i18n="signup.name">Name</label>
-        <input id="c1_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.namePh1" placeholder="Rahul" aria-describedby="c1_name-error">
+        <input id="c1_name" class="ob-input" autocomplete="off" maxlength="40" data-i18n-ph="signup.namePh1" placeholder="Rahul" aria-describedby="c1_name-error">
         <p class="ob-error" id="c1_name-error" role="alert" hidden></p>
         <fieldset class="ob-chips">
           <legend id="q-relation"></legend>
@@ -102,7 +103,7 @@
           <input type="radio" name="relation" id="rel-daughter" value="daughter"><label for="rel-daughter" data-i18n="ob.rel.daughter">Daughter</label>
           <input type="radio" name="relation" id="rel-other" value="other"><label for="rel-other" data-i18n="ob.rel.other">Someone else</label>
         </fieldset>
-        <input id="c1_relation" class="ob-input small" autocomplete="off" data-i18n-ph="ob.relOther" placeholder="Their relation" data-i18n-label="ob.relOther" aria-label="Their relation" hidden>
+        <input id="c1_relation" class="ob-input small" autocomplete="off" maxlength="40" data-i18n-ph="ob.relOther" placeholder="Their relation" data-i18n-label="ob.relOther" aria-label="Their relation" hidden>
       </section>
 
       <section class="ob-step" data-step="firstPhone" hidden>
@@ -118,7 +119,7 @@
         <h1 tabindex="-1" id="q-second"></h1>
         <p class="ob-hint" id="h-second"></p>
         <label class="ob-label" for="c2_name" data-i18n="signup.name">Name</label>
-        <input id="c2_name" class="ob-input" autocomplete="off" data-i18n-ph="signup.namePh2" placeholder="Priya" aria-describedby="c2_name-error">
+        <input id="c2_name" class="ob-input" autocomplete="off" maxlength="40" data-i18n-ph="signup.namePh2" placeholder="Priya" aria-describedby="c2_name-error">
         <p class="ob-error" id="c2_name-error" role="alert" hidden></p>
         <label class="ob-label" for="c2_phone" data-i18n="signup.mobile">Mobile number</label>
         <input id="c2_phone" class="ob-input" type="tel" inputmode="tel" autocomplete="off" aria-describedby="c2_phone-error">
@@ -130,11 +131,11 @@
         <h1 tabindex="-1" id="q-word" data-i18n="ob.q.word">Choose a family word</h1>
         <p class="ob-hint" id="h-word"></p>
         <label class="ob-label" for="family_word_latin" data-i18n="signup.wordLatin">In English letters</label>
-        <input id="family_word_latin" class="ob-input" autocomplete="off" spellcheck="false" placeholder="aam ras" aria-describedby="h-word family_word_latin-error">
+        <input id="family_word_latin" class="ob-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="aam ras" aria-describedby="h-word family_word_latin-error">
         <p class="ob-error" id="family_word_latin-error" role="alert" hidden></p>
         <div id="native-field">
           <label class="ob-label" for="family_word_native" id="native-label"></label>
-          <input id="family_word_native" class="ob-input" autocomplete="off" spellcheck="false" lang="hi" placeholder="आम रस" aria-describedby="h-word family_word_native-error">
+          <input id="family_word_native" class="ob-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" lang="hi" placeholder="आम रस" aria-describedby="h-word family_word_native-error">
           <p class="ob-error" id="family_word_native-error" role="alert" hidden></p>
         </div>
       </section>
@@ -223,6 +224,8 @@
     // Button links work like keys, so the list lasts only for this tab: names and links, nothing else.
     const PROFILES_KEY = "asli-profiles";
 
+    // Matches the backend: names are spoken aloud, so letters, marks, spaces and . ' - only.
+    const isName = (raw) => /^[\p{L}\p{M} .'-]+$/u.test(raw);
     const isPhone = (raw) => {
       let digits = raw.replace(/\D/g, "");
       if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
@@ -371,12 +374,20 @@
         if (!val(id)) found[id] = "required";
         else if (!isPhone(val(id))) found[id] = "phone";
       };
-      if (name === "parentName" && !val("parent_name")) found.parent_name = "required";
+      const named = (id) => {
+        if (!val(id)) found[id] = "required";
+        else if (!isName(val(id))) found[id] = "nameChars";
+      };
+      if (name === "parentName") named("parent_name");
       if (name === "parentPhone") phone("parent_phone");
-      if (name === "first" && !val("c1_name")) found.c1_name = "required";
+      if (name === "first") {
+        named("c1_name");
+        if (relation() === "other" && val("c1_relation") && !isName(val("c1_relation"))) found.c1_relation = "nameChars";
+      }
       if (name === "firstPhone") phone("c1_phone");
       if (name === "second" && (val("c2_name") || val("c2_phone"))) {
         if (!val("c2_name")) found.c2_name = "contactName";
+        else if (!isName(val("c2_name"))) found.c2_name = "nameChars";
         if (!val("c2_phone")) found.c2_phone = "contactPair";
         else if (!isPhone(val("c2_phone"))) found.c2_phone = "phone";
       }
@@ -440,6 +451,9 @@
         const url = new URL(body.tap_url, location.href).href;
         document.getElementById("tap-link").value = url;
         saveProfile({ name: val("parent_name"), url });
+        // The family word is the one secret here; once it's saved, nothing on the page should still hold it.
+        ["family_word_latin", "family_word_native"].forEach((id) => { document.getElementById(id).value = ""; });
+        document.getElementById("ob-review").replaceChildren();
         document.getElementById("done").hidden = false;
         paintProfiles();
         document.getElementById("done-title").focus();
@@ -461,7 +475,7 @@
 
     backBtn.addEventListener("click", () => go(step - 1));
 
-    // Contacts, language, family word and invite code stay filled in; only the new person's details are cleared.
+    // Contacts, language and invite code stay filled in; the new person's details and family word are asked again.
     document.getElementById("add-another").addEventListener("click", () => {
       ["parent_name", "parent_phone"].forEach((id) => { document.getElementById(id).value = ""; });
       copied = false;

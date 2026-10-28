@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import hmac
 import json
 import logging
@@ -6,27 +7,61 @@ import os
 import re
 import secrets
 import time
+import unicodedata
+from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from . import db, notify
 from .bolna import Bolna
 from .languages import DEFAULT_LANGUAGE, LANGUAGES, asked, greeting, in_script
 from .stacks import DEFAULT_STACK, STACKS, Session, pick_stack, stack_for_agent
-from .verdict import CHILD_CONFIRMED, CHILD_SAFE, NOT_CONFIRMED, decide, normalize_word
+from .verdict import CHILD_CONFIRMED, CHILD_SAFE, NOT_CONFIRMED, SEALED, decide, normalize_word, seal_word, word_key
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 log = logging.getLogger("asli")
 
+
+class DropQuery(logging.Filter):
+    # Tap links carry the family's key and /lookup carries a phone number, both in the query string.
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple) and len(record.args) >= 3:
+            args = list(record.args)
+            args[2] = str(args[2]).split("?", 1)[0]
+            record.args = tuple(args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(DropQuery())
+
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
 RESCUES_PER_HOUR = 10
+PRESSES_PER_HOUR = 20
+CALLS_PER_NUMBER_PER_HOUR = 15
+NAME_MAX = 40
+INVITE_FAILURES_MAX = 30
+INVITE_FAILURE_WINDOW_S = 15 * 60
+MAX_BODY_BYTES = 64 * 1024
+SECURITY_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; "
+        "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    ),
+    # Tap links carry the family's key in the query string, so no page may pass its URL on.
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Strict-Transport-Security": "max-age=31536000",
+}
 DRILL_WINDOW_S = 30 * 60
 UNREACHED = {"no-answer", "busy", "failed", "canceled", "error", "balance-low"}
 CHECK_FINAL = UNREACHED | {"completed", "stopped"}
@@ -47,6 +82,7 @@ class Runtime:
         self.sender = None
         self.timers: dict[str, asyncio.Task] = {}
         self.tasks: set[asyncio.Task] = set()
+        self.invite_failures: deque[float] = deque()
 
     def spawn(self, coro) -> asyncio.Task:
         task = asyncio.create_task(coro)
@@ -66,6 +102,8 @@ rt = Runtime()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    seal_stored_words()
+    rt.invite_failures.clear()
     owned = rt.bolna is None
     if owned:
         rt.bolna = Bolna()
@@ -84,7 +122,19 @@ async def lifespan(app: FastAPI):
         rt.bolna = None
 
 
-app = FastAPI(title="Asli hai?", lifespan=lifespan)
+app = FastAPI(title="Asli hai?", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.middleware("http")
+async def guard(request: Request, call_next):
+    length = request.headers.get("content-length")
+    if length and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
+        return JSONResponse({"detail": "Request too large"}, status_code=413)
+    response = await call_next(request)
+    response.headers.update(SECURITY_HEADERS)
+    if not request.url.path.startswith("/web/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def require_secret(request: Request) -> None:
@@ -98,7 +148,7 @@ def require_secret(request: Request) -> None:
 async def payload(request: Request) -> dict:
     try:
         body = await request.json()
-    except ValueError:
+    except (ValueError, RecursionError):
         return {}
     return body if isinstance(body, dict) else {}
 
@@ -142,6 +192,41 @@ def contact_order(contacts: list[dict], claimed_name: str | None) -> list[dict]:
     if match is None:
         return ordered
     return [match] + [c for c in ordered if c is not match]
+
+
+def tag(family_id: str) -> str:
+    # family_id unlocks the parent's button, so logs carry only a short fingerprint of it.
+    return hashlib.sha256(family_id.encode()).hexdigest()[:8]
+
+
+def plain_name(value: str) -> str:
+    # Names are spoken aloud and put into agent prompts, so only letters, marks, spaces and . ' - get through.
+    value = " ".join(value.split())
+    if not all(unicodedata.category(ch)[0] in "LM" or ch in " .'-" for ch in value):
+        raise ValueError("Use only letters and spaces")
+    return value
+
+
+def seal_stored_words() -> None:
+    if not word_key():
+        log.warning("WORD_KEY and TOOL_SECRET are unset; family words stay as stored")
+        return
+    rows = db.all_rows("SELECT id, family_word_latin, family_word_native FROM families WHERE family_word_latin NOT LIKE ?", SEALED + "%")
+    for row in rows:
+        db.execute("UPDATE families SET family_word_latin = ?, family_word_native = ? WHERE id = ?",
+                   seal_word(row["family_word_latin"]), seal_word(row["family_word_native"]), row["id"])
+    if rows:
+        log.info("sealed family words families=%d", len(rows))
+
+
+def number_capped(phone: str) -> bool:
+    # A number can be a contact in many families, so the cap is per number, whoever registered it.
+    calls = db.one("SELECT COUNT(*) AS n FROM outbound WHERE phone = ? AND at > ?", phone, time.time() - 3600)["n"]
+    if calls >= CALLS_PER_NUMBER_PER_HOUR:
+        log.warning("call cap reached for a contact number")
+        return True
+    db.execute("INSERT INTO outbound (phone, at) VALUES (?, ?)", phone, time.time())
+    return False
 
 
 def new_id(prefix: str) -> str:
@@ -258,6 +343,8 @@ async def dial(session_id: str, start: int) -> None:
     for contact in order[start:]:
         if db.one("SELECT verdict FROM sessions WHERE id = ?", session_id)["verdict"]:
             return
+        if number_capped(contact["phone"]):
+            continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "alert" if alert else "verify"))
         except MAYBE_SENT:
@@ -299,10 +386,10 @@ def rescue_enabled() -> bool:
 
 def rescue_capped(family_id: str, now: float) -> bool:
     # The tap link is the only key. Past the cap a press still reaches the parent; it just stops ringing the family.
-    rescues = db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ? AND rescue_run_id IS NOT NULL",
+    rescues = db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ? AND rescue_requested_at IS NOT NULL",
                      family_id, now - 3600)["n"]
     if rescues >= RESCUES_PER_HOUR:
-        log.warning("rescue cap reached family=%s", family_id)
+        log.warning("rescue cap reached family=%s", tag(family_id))
         return True
     return False
 
@@ -324,7 +411,7 @@ async def start_rescue(session_id: str, after_priority: int = 0) -> None:
         log.error("no check agent for stack=%s", session["stack"])
         return
     for contact in family_contacts(session["family_id"]):
-        if contact["priority"] <= after_priority:
+        if contact["priority"] <= after_priority or number_capped(contact["phone"]):
             continue
         try:
             run_id = await rt.bolna.place_call(agent_id, contact["phone"], check_user_data(session, family, contact, "rescue"))
@@ -443,19 +530,23 @@ def parent_user_data(session_id: str, family: dict) -> dict:
 
 
 class ContactIn(BaseModel):
-    name: str = Field(min_length=1, max_length=60)
-    relation: str = Field("", max_length=40)
+    name: str = Field(min_length=1, max_length=NAME_MAX)
+    relation: str = Field("", max_length=NAME_MAX)
     phone: str = Field(max_length=20)
+
+    _names = field_validator("name", "relation")(plain_name)
 
 
 class FamilyIn(BaseModel):
-    parent_name: str = Field(min_length=1, max_length=60)
+    parent_name: str = Field(min_length=1, max_length=NAME_MAX)
     parent_phone: str = Field(max_length=20)
     language: str = Field(DEFAULT_LANGUAGE, max_length=10)
     contacts: list[ContactIn] = Field(min_length=1, max_length=2)
     family_word_latin: str = Field(min_length=1, max_length=60)
     family_word_native: str = Field("", max_length=60)
     invite_code: str = ""
+
+    _names = field_validator("parent_name")(plain_name)
 
 
 class TriggerIn(BaseModel):
@@ -476,7 +567,14 @@ def health():
 @app.post("/families")
 def register_family(body: FamilyIn):
     code = os.getenv("SIGNUP_CODE")
+    failures = rt.invite_failures
+    while failures and failures[0] < time.time() - INVITE_FAILURE_WINDOW_S:
+        failures.popleft()
+    # Counted across everyone: behind Render's proxy there is no client address worth trusting.
+    if code and len(failures) >= INVITE_FAILURES_MAX:
+        raise HTTPException(429, "Too many wrong invite codes. Try again in a few minutes.")
     if code and not hmac.compare_digest(body.invite_code.strip().encode(), code.encode()):
+        failures.append(time.time())
         raise HTTPException(403, "That invite code isn't valid. Ask the pilot team for yours.")
     try:
         parent_phone = to_e164(body.parent_phone)
@@ -495,13 +593,13 @@ def register_family(body: FamilyIn):
     with db.connect() as conn:
         conn.execute(
             "INSERT INTO families (id, parent_name, parent_phone, language, family_word_latin, family_word_native) VALUES (?, ?, ?, ?, ?, ?)",
-            (family_id, body.parent_name.strip(), parent_phone, body.language, body.family_word_latin.strip(), native),
+            (family_id, body.parent_name, parent_phone, body.language, seal_word(body.family_word_latin), seal_word(native)),
         )
         conn.executemany(
             "INSERT INTO contacts (family_id, name, relation, phone, priority) VALUES (?, ?, ?, ?, ?)",
-            [(family_id, c.name.strip(), c.relation.strip(), phone, i) for i, (c, phone) in enumerate(zip(body.contacts, phones), 1)],
+            [(family_id, c.name, c.relation, phone, i) for i, (c, phone) in enumerate(zip(body.contacts, phones), 1)],
         )
-    log.info("family registered id=%s contacts=%d", family_id, len(phones))
+    log.info("family registered family=%s contacts=%d", tag(family_id), len(phones))
     return {"family_id": family_id, "tap_url": f"/web/tap.html?f={family_id}&l={body.language}"}
 
 
@@ -517,6 +615,10 @@ async def trigger(body: TriggerIn):
     )
     if recent:
         return {"session_id": recent["id"], "repeat": True}
+    # Generous enough that a frightened parent never hits it; a leaked link can't place calls without end.
+    if db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ?", family["id"], now - 3600)["n"] >= PRESSES_PER_HOUR:
+        log.warning("press cap reached family=%s", tag(family["id"]))
+        raise HTTPException(429, "Too many presses in the last hour")
 
     drill = db.one(
         "SELECT id FROM drills d WHERE family_id = ? AND (id = ? OR (? IS NULL AND ran_at > ?))"
@@ -547,6 +649,7 @@ async def trigger(body: TriggerIn):
     log.info("session started id=%s stack=%s drill=%s run=%s", session_id, stack, drill_id, run_id)
     # Drills are timed rehearsals, so they leave the family's phones alone.
     if rescue_enabled() and not drill_id and not rescue_capped(family["id"], now):
+        db.execute("UPDATE sessions SET rescue_requested_at = ? WHERE id = ?", now, session_id)
         rt.spawn(start_rescue(session_id))
     return {"session_id": session_id}
 

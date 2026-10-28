@@ -1,8 +1,12 @@
+import hashlib
+import hmac
+import os
 import unicodedata
 
 CHILD_SAFE = "child_safe"
 CHILD_CONFIRMED = "child_confirmed"
 NOT_CONFIRMED = "not_confirmed"
+SEALED = "h1:"
 
 
 def normalize_word(text: str | None) -> str:
@@ -12,11 +16,29 @@ def normalize_word(text: str | None) -> str:
     return "".join(ch for ch in text if unicodedata.category(ch)[0] in "LMN")
 
 
+def word_key() -> bytes | None:
+    # WORD_KEY lets TOOL_SECRET rotate without breaking every stored word.
+    key = os.getenv("WORD_KEY") or os.getenv("TOOL_SECRET")
+    return hashlib.sha256(b"asli-family-word:" + key.encode()).digest() if key else None
+
+
+def seal_word(text: str | None) -> str:
+    """Keyed hash of the normalized word, so a copy of the database never shows anyone's family word."""
+    word, key = normalize_word(text), word_key()
+    if not key:
+        raise RuntimeError("Set WORD_KEY or TOOL_SECRET before storing family words")
+    return SEALED + hmac.new(key, word.encode(), hashlib.sha256).hexdigest() if word else ""
+
+
 def word_matches(spoken: str | None, latin: str, native: str) -> bool:
     heard = normalize_word(spoken)
-    if not heard:
+    stored = [w for w in (latin, native) if w]
+    if not heard or not stored:
         return False
-    return heard in {w for w in (normalize_word(latin), normalize_word(native)) if w}
+    if any(w.startswith(SEALED) for w in stored):
+        sealed = seal_word(heard)
+        return any(hmac.compare_digest(sealed, w) for w in stored)
+    return heard in {normalize_word(w) for w in stored}
 
 
 def normalize_answer(did_call: str | None) -> str:

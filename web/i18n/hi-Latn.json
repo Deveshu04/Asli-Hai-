@@ -123,6 +123,7 @@
   "signup.profiles": "Is phone se jode gaye log",
   "signup.addAnother": "Kisi aur ko jodiye",
   "err.required": "Yeh bhariye.",
+  "err.nameChars": "Sirf akshar aur space likhiye.",
   "err.phone": "10 digit ka Indian mobile number likhiye.",
   "err.contactPair": "Is vyakti ka mobile number likhiye, ya naam hata dijiye.",
   "err.contactName": "Is vyakti ka naam likhiye.",

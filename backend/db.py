@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     contact_priority INTEGER,
     parent_ended_at REAL,
     alert_started_at REAL,
+    rescue_requested_at REAL,
     rescue_run_id TEXT,
     rescue_priority INTEGER,
     rescue_ended_at REAL,
@@ -59,6 +60,12 @@ CREATE TABLE IF NOT EXISTS sessions (
     summary_sent_at REAL
 );
 
+CREATE TABLE IF NOT EXISTS outbound (
+    phone TEXT NOT NULL,
+    at REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS outbound_phone ON outbound(phone, at);
 CREATE INDEX IF NOT EXISTS sessions_parent_run ON sessions(parent_run_id);
 CREATE INDEX IF NOT EXISTS sessions_check_run ON sessions(check_run_id);
 """
@@ -82,6 +89,7 @@ def connect():
 
 ADDED_COLUMNS = [
     ("sessions", "alert_started_at", "REAL"),
+    ("sessions", "rescue_requested_at", "REAL"),
     ("sessions", "rescue_run_id", "TEXT"),
     ("sessions", "rescue_priority", "INTEGER"),
     ("sessions", "rescue_ended_at", "REAL"),
