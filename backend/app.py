@@ -26,6 +26,7 @@ log = logging.getLogger("asli")
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 RETAP_WINDOW_S = 30
+TRIGGERS_PER_HOUR = 10
 DRILL_WINDOW_S = 30 * 60
 UNREACHED = {"no-answer", "busy", "failed", "canceled", "error", "balance-low"}
 CHECK_FINAL = UNREACHED | {"completed", "stopped"}
@@ -506,6 +507,9 @@ async def trigger(body: TriggerIn):
     )
     if recent:
         return {"session_id": recent["id"], "repeat": True}
+    # The tap link is the only key, and each press rings two phones, so a leaked link can't run up calls.
+    if db.one("SELECT COUNT(*) AS n FROM sessions WHERE family_id = ? AND started_at > ?", family["id"], now - 3600)["n"] >= TRIGGERS_PER_HOUR:
+        raise HTTPException(429, "Too many presses in the last hour")
 
     drill = db.one(
         "SELECT id FROM drills d WHERE family_id = ? AND (id = ? OR (? IS NULL AND ran_at > ?))"
@@ -690,10 +694,11 @@ async def on_rescue_status(session: dict, run_id: str, status: str, data: dict) 
         log.info("rescue call over, checking the claimed contact session=%s", session["id"])
         arm_timer(session["id"])
         await dial(session["id"], 0)
-    elif unreached and session["alert_started_at"]:
+    elif session["alert_started_at"] and not session["rescue_told_at"]:
+        # The alert never reached this call, so it goes out as a call of its own.
         order = contact_order(family_contacts(session["family_id"]), session["claimed_name"])
         index = next((i for i, c in enumerate(order) if c["priority"] == session["rescue_priority"]), -1)
-        await dial(session["id"], index + 1)
+        await dial(session["id"], index + 1 if unreached else 0)
     elif unreached and not session["verification_started_at"]:
         log.info("rescue call unreached session=%s status=%s priority=%s", session["id"], status, session["rescue_priority"])
         await start_rescue(session["id"], session["rescue_priority"])

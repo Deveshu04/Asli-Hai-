@@ -220,7 +220,7 @@
     let formMessage = null;
     let callLang = null;
     let copied = false;
-    // Only names and button links, so nothing private is left on a shared phone.
+    // Button links work like keys, so the list lasts only for this tab: names and links, nothing else.
     const PROFILES_KEY = "asli-profiles";
 
     const isPhone = (raw) => {
@@ -315,7 +315,7 @@
 
     function loadProfiles() {
       try {
-        const list = JSON.parse(localStorage.getItem(PROFILES_KEY) || "[]");
+        const list = JSON.parse(sessionStorage.getItem(PROFILES_KEY) || "[]");
         return Array.isArray(list) ? list.filter((p) => p && p.name && p.url) : [];
       } catch {
         return [];
@@ -324,7 +324,7 @@
 
     function saveProfile(profile) {
       const list = [profile, ...loadProfiles().filter((p) => p.url !== profile.url)];
-      try { localStorage.setItem(PROFILES_KEY, JSON.stringify(list)); } catch {}
+      try { sessionStorage.setItem(PROFILES_KEY, JSON.stringify(list)); } catch {}
     }
 
     function paintProfiles() {

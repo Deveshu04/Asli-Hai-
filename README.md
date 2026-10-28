@@ -64,7 +64,7 @@ sequenceDiagram
   - stay on the scam.
 
   Safety lines can't be talked over. A post-call audit, the `guardrail_breach` disposition, checks every transcript, and the backend logs any call it flags.
-- **Several people, one setup.** A family member can protect a mother, a father and a sister from the same phone. Each gets their own button link, and the signup page lists everyone set up on that phone.
+- **Several people, one setup.** A family member can protect a mother, a father and a sister from the same phone. Each gets their own button link, and the signup page lists everyone added in that visit.
 - **Two calls at once.** The rescue call needs a Bolna account that allows at least 2 concurrent calls. Set `RESCUE_CALLS=off` to go back to one call at a time.
 
 ## Accessibility
