@@ -53,7 +53,10 @@ sequenceDiagram
 
 The people using this are parents over 55, often in a panic.
 
-- **The parent's language.** The tap button comes in all 12 call languages and opens in the one the family picked at signup. It remembers its own setting, so a child browsing the site in English doesn't change it for the parent. The home page and signup switch between Hindi and English.
+- **Every page in 12 languages.** The home page, signup and the tap button come in every call language, with a language picker on each page. Translations live in `web/i18n/<language>.json`, and a page loads only the language in use.
+- **Readable scripts.** Each script gets a matching Noto font, loaded only when that language is picked, so Tamil, Odia and the rest don't fall back to whatever the phone has.
+- **The parent's own setting.** The tap button opens in the language the family picked at signup and remembers its own setting, so a child browsing the site in English doesn't change it for the parent.
+- **A demo in any language.** The simulator plays the call in any of the 12 languages, with subtitles in the page's language.
 - **Larger text** with one button on every page.
 - **One huge button.** The parent's only control is a single, high-contrast button with a short vibration when pressed.
 - **Screen readers and keyboards.** Every form field has a label, errors are tied to their fields and focus moves to the first one, status changes are announced, and there's a skip link on every page.

@@ -32,8 +32,16 @@ body {
   line-height: 1.55;
 }
 
-html[data-lang="en"] .t[lang="hi"],
-html[data-lang="hi"] .t[lang="en"] { display: none; }
+html.i18n-pending body { visibility: hidden; }
+
+html[data-lang="bn"] body, html[data-lang="as"] body { font-family: "Noto Sans Bengali", "Mukta", system-ui, sans-serif; }
+html[data-lang="ta"] body { font-family: "Noto Sans Tamil", "Mukta", system-ui, sans-serif; }
+html[data-lang="te"] body { font-family: "Noto Sans Telugu", "Mukta", system-ui, sans-serif; }
+html[data-lang="kn"] body { font-family: "Noto Sans Kannada", "Mukta", system-ui, sans-serif; }
+html[data-lang="ml"] body { font-family: "Noto Sans Malayalam", "Mukta", system-ui, sans-serif; }
+html[data-lang="gu"] body { font-family: "Noto Sans Gujarati", "Mukta", system-ui, sans-serif; }
+html[data-lang="pa"] body { font-family: "Noto Sans Gurmukhi", "Mukta", system-ui, sans-serif; }
+html[data-lang="od"] body { font-family: "Noto Sans Oriya", "Mukta", system-ui, sans-serif; }
 
 .mark {
   font-family: "Tiro Devanagari Hindi", serif;
@@ -279,9 +287,13 @@ a { color: var(--ink); text-underline-offset: 0.18em; }
 
 /* check simulator */
 
+.sim-options { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; align-items: flex-end; margin-bottom: 1.25rem; }
+
+.sim-options .call-lang { margin: 0; min-width: 14rem; }
+
 .scenarios {
   border: 0;
-  margin: 0 0 1.25rem;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -370,11 +382,9 @@ a { color: var(--ink); text-underline-offset: 0.18em; }
   border: 1px solid var(--rule);
 }
 
-.line .hi { display: block; font-size: 1.05rem; line-height: 1.5; }
+.line .said { display: block; font-size: 1.05rem; line-height: 1.5; }
 
-.line .en { display: block; font-size: 0.92rem; color: var(--ink-soft); margin-top: 0.25rem; }
-
-html[data-lang="hi"] .line .en { display: none; }
+.line .sub { display: block; font-size: 0.92rem; color: var(--ink-soft); margin-top: 0.25rem; }
 
 .line.agent { align-self: flex-start; }
 

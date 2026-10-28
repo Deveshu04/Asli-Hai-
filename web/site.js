@@ -1,6 +1,20 @@
 (function () {
   const root = document.documentElement;
+  const FONTS = {
+    bn: "Noto+Sans+Bengali", as: "Noto+Sans+Bengali", ta: "Noto+Sans+Tamil", te: "Noto+Sans+Telugu",
+    kn: "Noto+Sans+Kannada", ml: "Noto+Sans+Malayalam", gu: "Noto+Sans+Gujarati", pa: "Noto+Sans+Gurmukhi", od: "Noto+Sans+Oriya",
+  };
+  const LINKS = {
+    tel1930: '<a href="tel:1930"><strong>1930</strong></a>',
+    cyber: '<a href="https://cybercrime.gov.in">cybercrime.gov.in</a>',
+    github: '<a href="https://github.com/Deveshu04/Asli-Hai-">GitHub</a>',
+  };
+  const cache = {};
   const listeners = [];
+  let strings = {};
+  let fallback = {};
+  let loaded = false;
+  let pending = 0;
 
   function save(key, value) {
     try {
@@ -8,25 +22,54 @@
     } catch (err) {}
   }
 
-  function applyLang(lang) {
+  function escapeHtml(text) {
+    return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
+
+  function load(lang) {
+    if (!root.hasAttribute("data-i18n-page")) return Promise.resolve({});
+    if (!cache[lang]) {
+      cache[lang] = fetch(`i18n/${lang}.json?v=3`).then((res) => (res.ok ? res.json() : {})).catch(() => ({}));
+    }
+    return cache[lang];
+  }
+
+  function t(key, vars) {
+    let text = strings[key] ?? fallback[key] ?? key;
+    if (vars) text = text.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? vars[name] : match));
+    return text;
+  }
+
+  function loadFont(lang) {
+    if (!FONTS[lang] || document.getElementById("font-" + lang)) return;
+    const link = document.createElement("link");
+    link.id = "font-" + lang;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${FONTS[lang]}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }
+
+  async function applyLang(lang) {
+    const ticket = ++pending;
     root.dataset.lang = lang;
     root.lang = lang === "od" ? "or" : lang;
-    const suffix = lang === "hi" ? "Hi" : "En";
-    if (root.dataset["title" + suffix]) document.title = root.dataset["title" + suffix];
-    document.querySelectorAll("[data-ph-en]").forEach((el) => {
-      el.placeholder = el.dataset["ph" + suffix];
+    loadFont(lang);
+    const [dict, english] = await Promise.all([load(lang), load("en")]);
+    if (ticket !== pending) return;
+    strings = dict;
+    fallback = english;
+
+    if (root.dataset.i18nTitle) document.title = t(root.dataset.i18nTitle);
+    document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+      el.innerHTML = escapeHtml(t(el.dataset.i18nHtml)).replace(/\{(\w+)\}/g, (match, name) => LINKS[name] || match);
     });
-    document.querySelectorAll("[data-label-en]").forEach((el) => {
-      el.setAttribute("aria-label", el.dataset["label" + suffix]);
-    });
-    document.querySelectorAll("[data-lang-select]").forEach((select) => {
-      select.value = lang;
-    });
-    document.querySelectorAll("[data-set-lang]").forEach((btn) => {
-      const other = lang === "hi" ? "en" : "hi";
-      btn.textContent = other === "hi" ? "हिंदी" : "English";
-      btn.lang = other;
-    });
+    document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+    document.querySelectorAll("[data-i18n-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nLabel)); });
+    document.querySelectorAll("[data-lang-select]").forEach((select) => { select.value = lang; });
+
+    loaded = true;
+    root.classList.remove("i18n-pending");
     listeners.forEach((fn) => fn(lang));
   }
 
@@ -36,11 +79,7 @@
   }
 
   document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-set-lang]")) {
-      const next = root.dataset.lang === "hi" ? "en" : "hi";
-      save(root.dataset.langKey || "asli-lang", next);
-      applyLang(next);
-    } else if (event.target.closest("[data-text-size]")) {
+    if (event.target.closest("[data-text-size]")) {
       const large = !root.classList.contains("large-text");
       save("asli-text", large ? "large" : "normal");
       applySize(large);
@@ -56,10 +95,14 @@
 
   window.asli = {
     lang: () => root.dataset.lang,
-    pick: (copy) => copy[root.dataset.lang] || copy.en,
-    onLang: (fn) => listeners.push(fn),
+    t,
+    load,
+    onLang: (fn) => {
+      listeners.push(fn);
+      if (loaded) fn(root.dataset.lang);
+    },
   };
 
-  applyLang(root.dataset.lang || "en");
   applySize(root.classList.contains("large-text"));
+  applyLang(root.dataset.lang || "en");
 })();

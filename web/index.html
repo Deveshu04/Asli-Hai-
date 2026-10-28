@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-title-en="Asli hai? — check before a parent pays" data-title-hi="असली है? — पैसे भेजने से पहले जाँच">
+<html lang="en" data-lang="en" data-i18n-page data-i18n-title="title.home">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,168 +8,190 @@
   <title>Asli hai? — check before a parent pays</title>
   <script>
     (function (d) {
+      var known = ["hi", "en", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "od", "as"];
+      var l = null;
       try {
-        var l = localStorage.getItem("asli-lang");
-        if (l === "hi" || l === "en") { d.dataset.lang = l; d.lang = l; }
+        l = localStorage.getItem("asli-lang");
         if (localStorage.getItem("asli-text") === "large") d.classList.add("large-text");
       } catch (e) {}
+      if (known.indexOf(l) >= 0) { d.dataset.lang = l; d.lang = l === "od" ? "or" : l; }
+      if (d.dataset.lang !== "en") {
+        d.classList.add("i18n-pending");
+        setTimeout(function () { d.classList.remove("i18n-pending"); }, 2500);
+      }
     })(document.documentElement);
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body class="home">
-  <a class="skip" href="#main"><span class="t" lang="en">Skip to content</span><span class="t" lang="hi">मुख्य हिस्से पर जाइए</span></a>
+  <a class="skip" href="#main" data-i18n="skip.content">Skip to content</a>
 
   <header class="bar">
     <a class="mark" href="./" lang="hi">असली है?</a>
-    <nav data-label-en="Sections" data-label-hi="हिस्से">
-      <a href="#how"><span class="t" lang="en">How it works</span><span class="t" lang="hi">कैसे काम करता है</span></a>
-      <a href="#demo"><span class="t" lang="en">Watch a check</span><span class="t" lang="hi">जाँच देखिए</span></a>
-      <a href="signup.html"><span class="t" lang="en">Register a family</span><span class="t" lang="hi">परिवार जोड़िए</span></a>
+    <nav data-i18n-label="nav.label" aria-label="Sections">
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#demo" data-i18n="nav.demo">Watch a check</a>
+      <a href="signup.html" data-i18n="nav.register">Register a family</a>
     </nav>
-    <div class="prefs" role="group" data-label-en="Display settings" data-label-hi="दिखावट">
-      <button type="button" class="pref" data-set-lang>हिंदी</button>
-      <button type="button" class="pref" data-text-size aria-pressed="false" data-label-en="Larger text" data-label-hi="बड़े अक्षर">A+</button>
+    <div class="prefs" role="group" data-i18n-label="prefs.label" aria-label="Display settings">
+      <label class="lang-pick">
+        <span data-i18n="prefs.language">Language</span>
+        <select data-lang-select>
+          <option value="en" lang="en">English</option>
+          <option value="hi" lang="hi">हिंदी</option>
+          <option value="bn" lang="bn">বাংলা</option>
+          <option value="mr" lang="mr">मराठी</option>
+          <option value="te" lang="te">తెలుగు</option>
+          <option value="ta" lang="ta">தமிழ்</option>
+          <option value="gu" lang="gu">ગુજરાતી</option>
+          <option value="kn" lang="kn">ಕನ್ನಡ</option>
+          <option value="ml" lang="ml">മലയാളം</option>
+          <option value="pa" lang="pa">ਪੰਜਾਬੀ</option>
+          <option value="od" lang="or">ଓଡ଼ିଆ</option>
+          <option value="as" lang="as">অসমীয়া</option>
+        </select>
+      </label>
+      <button type="button" class="pref" data-text-size aria-pressed="false" data-i18n-label="prefs.larger" aria-label="Larger text">A+</button>
     </div>
   </header>
 
   <main id="main" tabindex="-1">
     <section class="hero" aria-labelledby="hero-title">
-      <blockquote lang="hi">
-        “पापा, एक्सीडेंट हो गया है। जल्दी पैसे भेजो।”
-        <footer><span class="t" lang="en">The kind of call that comes minutes before a scam transfer.</span><span class="t" lang="hi">ऐसा कॉल अक्सर ठगी से कुछ मिनट पहले आता है।</span></footer>
+      <blockquote>
+        <span lang="hi">“पापा, एक्सीडेंट हो गया है। जल्दी पैसे भेजो।”</span>
+        <footer data-i18n="hero.footer">The kind of call that comes minutes before a scam transfer.</footer>
       </blockquote>
-      <h1 id="hero-title"><span class="t" lang="en">One tap asks the real family before a parent pays.</span><span class="t" lang="hi">पैसे भेजने से पहले, एक बटन असली परिवार से पूछ लेता है।</span></h1>
-      <p>
-        <span class="t" lang="en">Asli hai? calls the parent back, then calls the family member the caller pretended to be, while the parent stays on the line. Then it tells them, in their own language, whether the call was genuine.</span>
-        <span class="t" lang="hi">असली है? माता-पिता को वापस कॉल करता है, और जिस परिवार वाले के नाम से कॉल आया था उसे भी कॉल करता है, जब तक माता-पिता लाइन पर रहते हैं। फिर उनकी अपनी भाषा में बताता है कि कॉल असली था या नहीं।</span>
-      </p>
+      <h1 id="hero-title" data-i18n="hero.title">One tap asks the real family before a parent pays.</h1>
+      <p data-i18n="hero.body">Asli hai? calls the parent back, then calls the family member the caller pretended to be, while the parent stays on the line. Then it tells them, in their own language, whether the call was genuine.</p>
       <div class="actions">
-        <a class="button primary" href="#demo"><span class="t" lang="en">Watch a check</span><span class="t" lang="hi">जाँच देखिए</span></a>
-        <a class="button secondary" href="signup.html"><span class="t" lang="en">Register your family</span><span class="t" lang="hi">अपना परिवार जोड़िए</span></a>
+        <a class="button primary" href="#demo" data-i18n="cta.watch">Watch a check</a>
+        <a class="button secondary" href="signup.html" data-i18n="cta.register">Register your family</a>
       </div>
     </section>
 
     <section class="section" id="demo" aria-labelledby="demo-title">
-      <h2 id="demo-title"><span class="t" lang="en">Watch a check</span><span class="t" lang="hi">एक जाँच देखिए</span></h2>
-      <p>
-        <span class="t" lang="en">Pick what happened, then press Play. Both calls run side by side: Saathi on the parent's phone, the family check on the family member's phone. Lines marked Fixed are safety messages, spoken word for word every time.</span>
-        <span class="t" lang="hi">चुनिए क्या हुआ, फिर चलाइए दबाइए। दोनों कॉल साथ-साथ चलते हैं: माता-पिता के फ़ोन पर साथी, और परिवार वाले के फ़ोन पर जाँच। "तय संदेश" वाले वाक्य सुरक्षा के लिए हर बार शब्दशः यही बोले जाते हैं।</span>
-      </p>
+      <h2 id="demo-title" data-i18n="demo.title">Watch a check</h2>
+      <p data-i18n="demo.body">Pick what happened and the language of the call, then press Play. Both calls run side by side: Saathi on the parent's phone, the family check on the family member's phone. Lines marked Fixed are safety messages, spoken word for word every time.</p>
 
       <div id="sim">
-        <fieldset class="scenarios">
-          <legend><span class="t" lang="en">What happened</span><span class="t" lang="hi">क्या हुआ</span></legend>
-          <input type="radio" name="scenario" id="sc-fake" value="fake" checked>
-          <label for="sc-fake"><span class="t" lang="en">“Beta” needs money</span><span class="t" lang="hi">“बेटे” को पैसे चाहिए</span></label>
-          <input type="radio" name="scenario" id="sc-real" value="real">
-          <label for="sc-real"><span class="t" lang="en">It really was Rahul</span><span class="t" lang="hi">सच में राहुल था</span></label>
-          <input type="radio" name="scenario" id="sc-cbi" value="cbi">
-          <label for="sc-cbi"><span class="t" lang="en">“CBI” digital arrest</span><span class="t" lang="hi">“CBI” डिजिटल अरेस्ट</span></label>
-          <input type="radio" name="scenario" id="sc-paid" value="paid">
-          <label for="sc-paid"><span class="t" lang="en">Money already sent</span><span class="t" lang="hi">पैसे जा चुके</span></label>
-          <input type="radio" name="scenario" id="sc-none" value="noanswer">
-          <label for="sc-none"><span class="t" lang="en">Family doesn't pick up</span><span class="t" lang="hi">परिवार फ़ोन नहीं उठाता</span></label>
-        </fieldset>
+        <div class="sim-options">
+          <fieldset class="scenarios">
+            <legend data-i18n="demo.legend">What happened</legend>
+            <input type="radio" name="scenario" id="sc-fake" value="fake" checked>
+            <label for="sc-fake" data-i18n="sc.fake">“Beta” needs money</label>
+            <input type="radio" name="scenario" id="sc-real" value="real">
+            <label for="sc-real" data-i18n="sc.real">It really was Rahul</label>
+            <input type="radio" name="scenario" id="sc-cbi" value="cbi">
+            <label for="sc-cbi" data-i18n="sc.cbi">“CBI” digital arrest</label>
+            <input type="radio" name="scenario" id="sc-paid" value="paid">
+            <label for="sc-paid" data-i18n="sc.paid">Money already sent</label>
+            <input type="radio" name="scenario" id="sc-none" value="noanswer">
+            <label for="sc-none" data-i18n="sc.none">Family doesn't pick up</label>
+          </fieldset>
+          <div class="field call-lang">
+            <label for="call-lang" data-i18n="demo.callLanguage">Language of the call</label>
+            <select id="call-lang"></select>
+          </div>
+        </div>
 
         <div class="stage">
           <section class="phone" aria-labelledby="parent-phone-title">
             <div class="phone-head">
-              <h3 id="parent-phone-title"><span class="t" lang="en">Sunita's phone</span><span class="t" lang="hi">सुनीता का फ़ोन</span></h3>
+              <h3 id="parent-phone-title" data-i18n="phone.parent">Sunita's phone</h3>
               <span class="state" id="parent-state"></span>
             </div>
-            <div class="phone-screen" id="parent-log" role="log" tabindex="0" data-label-en="Parent's call transcript" data-label-hi="माता-पिता के कॉल की बातचीत"></div>
+            <div class="phone-screen" id="parent-log" role="log" tabindex="0" data-i18n-label="log.parent" aria-label="Parent's call transcript"></div>
           </section>
 
           <div class="clock">
             <span class="seconds" id="sim-seconds">0</span>
-            <span class="unit"><span class="t" lang="en">seconds since the tap</span><span class="t" lang="hi">बटन दबाने के बाद सेकंड</span></span>
+            <span class="unit" data-i18n="clock.unit">seconds since the tap</span>
             <span class="verdict" id="sim-verdict" role="status"></span>
           </div>
 
           <section class="phone" aria-labelledby="family-phone-title">
             <div class="phone-head">
-              <h3 id="family-phone-title"><span class="t" lang="en">Family phone</span><span class="t" lang="hi">परिवार का फ़ोन</span></h3>
+              <h3 id="family-phone-title" data-i18n="phone.family">Family phone</h3>
               <span class="state" id="family-state"></span>
             </div>
-            <div class="phone-screen" id="family-log" role="log" tabindex="0" data-label-en="Family member's call transcript" data-label-hi="परिवार वाले के कॉल की बातचीत"></div>
+            <div class="phone-screen" id="family-log" role="log" tabindex="0" data-i18n-label="log.family" aria-label="Family member's call transcript"></div>
           </section>
         </div>
 
         <div class="controls">
           <button type="button" class="button primary" id="sim-play">Play</button>
-          <button type="button" class="button secondary" id="sim-step"><span class="t" lang="en">Next line</span><span class="t" lang="hi">अगली लाइन</span></button>
-          <p class="note"><span class="t" lang="en">Timings are illustrative and play at 3× speed. Pause, or step through one line at a time.</span><span class="t" lang="hi">समय अनुमानित है और तीन गुना तेज़ चलता है। आप रोक सकते हैं, या एक-एक लाइन करके देख सकते हैं।</span></p>
+          <button type="button" class="button secondary" id="sim-step" data-i18n="sim.next">Next line</button>
+          <p class="note" data-i18n="sim.note">Timings are illustrative and play at 3× speed. Pause, or step through one line at a time.</p>
         </div>
       </div>
     </section>
 
     <section class="section" id="how" aria-labelledby="how-title">
-      <h2 id="how-title"><span class="t" lang="en">How it works</span><span class="t" lang="hi">यह कैसे काम करता है</span></h2>
-      <p><span class="t" lang="en">Two voice agents on Bolna and a small backend. The parent never hangs up.</span><span class="t" lang="hi">Bolna पर दो वॉइस एजेंट और एक छोटा सर्वर। माता-पिता को फ़ोन रखना नहीं पड़ता।</span></p>
+      <h2 id="how-title" data-i18n="how.title">How it works</h2>
+      <p data-i18n="how.body">Two voice agents on Bolna and a small backend. The parent never hangs up.</p>
       <ol class="steps">
         <li>
-          <h3><span class="t" lang="en">The parent taps one button</span><span class="t" lang="hi">माता-पिता एक बटन दबाते हैं</span></h3>
-          <p><span class="t" lang="en">Before paying anyone who claims to be family or police, they press the yellow button saved on their phone.</span><span class="t" lang="hi">परिवार या पुलिस बनकर पैसे माँगने वाले को कुछ भी देने से पहले, फ़ोन पर रखा पीला बटन दबाते हैं।</span></p>
+          <h3 data-i18n="how.1.title">The parent taps one button</h3>
+          <p data-i18n="how.1.body">Before paying anyone who claims to be family or police, they press the yellow button saved on their phone.</p>
         </li>
         <li>
-          <h3><span class="t" lang="en">Saathi calls them back</span><span class="t" lang="hi">साथी वापस कॉल करती है</span></h3>
-          <p><span class="t" lang="en">In two questions she finds out who called, what they wanted and how much.</span><span class="t" lang="hi">दो सवालों में पता करती है कि किसने कॉल किया, क्या माँगा और कितना।</span></p>
+          <h3 data-i18n="how.2.title">Saathi calls them back</h3>
+          <p data-i18n="how.2.body">In two questions she finds out who called, what they wanted and how much.</p>
         </li>
         <li>
-          <h3><span class="t" lang="en">A second call checks the family</span><span class="t" lang="hi">दूसरा कॉल परिवार से पूछता है</span></h3>
-          <p><span class="t" lang="en">While the parent waits, another agent calls the family member with one yes-or-no question. A yes also needs the family word.</span><span class="t" lang="hi">माता-पिता लाइन पर रहते हैं, और दूसरा एजेंट परिवार वाले से एक हाँ-या-ना सवाल पूछता है। हाँ कहने पर परिवार का शब्द भी चाहिए।</span></p>
+          <h3 data-i18n="how.3.title">A second call checks the family</h3>
+          <p data-i18n="how.3.body">While the parent waits, another agent calls the family member with one yes-or-no question. A yes also needs the family word.</p>
         </li>
         <li>
-          <h3><span class="t" lang="en">The verdict lands in the live call</span><span class="t" lang="hi">फ़ैसला उसी कॉल में पहुँचता है</span></h3>
-          <p><span class="t" lang="en">The answer is pushed straight into the parent's call, and the family gets a WhatsApp summary.</span><span class="t" lang="hi">जवाब सीधे माता-पिता के चल रहे कॉल में पहुँचता है, और परिवार को WhatsApp पर सारांश मिलता है।</span></p>
+          <h3 data-i18n="how.4.title">The verdict lands in the live call</h3>
+          <p data-i18n="how.4.body">The answer is pushed straight into the parent's call, and the family gets a WhatsApp summary.</p>
         </li>
       </ol>
     </section>
 
     <section class="section" id="safety" aria-labelledby="safety-title">
-      <h2 id="safety-title"><span class="t" lang="en">Built so it can't be talked into a wrong answer</span><span class="t" lang="hi">ऐसा बना है कि कोई इससे ग़लत जवाब न दिलवा सके</span></h2>
+      <h2 id="safety-title" data-i18n="safety.title">Built so it can't be talked into a wrong answer</h2>
       <div class="safety">
         <div>
-          <h3><span class="t" lang="en">Fixed safety wording</span><span class="t" lang="hi">तय शब्द</span></h3>
-          <p><span class="t" lang="en">Every verdict is a fixed line. The AI never improvises whether a call was real.</span><span class="t" lang="hi">हर फ़ैसला पहले से तय वाक्य है। AI अपनी तरफ़ से कभी नहीं कहता कि कॉल असली था।</span></p>
+          <h3 data-i18n="safety.1.title">Fixed safety wording</h3>
+          <p data-i18n="safety.1.body">Every verdict is a fixed line. The AI never improvises whether a call was real.</p>
         </div>
         <div>
-          <h3><span class="t" lang="en">The family word never reaches the AI</span><span class="t" lang="hi">परिवार का शब्द AI तक नहीं जाता</span></h3>
-          <p><span class="t" lang="en">It isn't in any prompt or log. Only the server compares it, in English or Hindi letters.</span><span class="t" lang="hi">यह किसी प्रॉम्प्ट या लॉग में नहीं होता। सिर्फ़ सर्वर इसे मिलाता है, अंग्रेज़ी या हिंदी अक्षरों में।</span></p>
+          <h3 data-i18n="safety.2.title">The family word never reaches the AI</h3>
+          <p data-i18n="safety.2.body">It isn't in any prompt or log. Only the server compares it, in English letters or the family's own script.</p>
         </div>
         <div>
-          <h3><span class="t" lang="en">A “no” is enough to stop a payment</span><span class="t" lang="hi">“ना” काफ़ी है</span></h3>
-          <p><span class="t" lang="en">If the family member didn't call, that settles it. A “yes” unlocks money, so it also needs the family word.</span><span class="t" lang="hi">अगर परिवार वाले ने कॉल नहीं किया, तो बात साफ़ है। “हाँ” से पैसे जा सकते हैं, इसलिए उसके साथ परिवार का शब्द भी चाहिए।</span></p>
+          <h3 data-i18n="safety.3.title">A “no” is enough to stop a payment</h3>
+          <p data-i18n="safety.3.body">If the family member didn't call, that settles it. A “yes” unlocks money, so it also needs the family word.</p>
         </div>
         <div>
-          <h3><span class="t" lang="en">Never left waiting</span><span class="t" lang="hi">लंबा इंतज़ार नहीं</span></h3>
-          <p><span class="t" lang="en">Unanswered calls move to the next family member. After 75 seconds without a clear answer, Saathi tells the parent not to pay until they reach the family themselves.</span><span class="t" lang="hi">कोई फ़ोन न उठाए तो अगले परिवार वाले को कॉल होता है। 75 सेकंड में साफ़ जवाब न मिले, तो साथी कहती है कि ख़ुद बात किए बिना पैसे मत भेजिए।</span></p>
+          <h3 data-i18n="safety.4.title">Never left waiting</h3>
+          <p data-i18n="safety.4.body">Unanswered calls move to the next family member. After 75 seconds without a clear answer, Saathi tells the parent not to pay until they reach the family themselves.</p>
         </div>
         <div>
-          <h3><span class="t" lang="en">Police and CBI calls get a straight answer</span><span class="t" lang="hi">पुलिस या CBI वाले कॉल</span></h3>
-          <p><span class="t" lang="en">There is no such thing as a “digital arrest”. Saathi says so, tells the parent to hang up, and reads out 1930 if money already went.</span><span class="t" lang="hi">“डिजिटल अरेस्ट” जैसी कोई चीज़ नहीं होती। साथी यही बताती है, कॉल काटने को कहती है, और पैसे जा चुके हों तो 1930 बताती है।</span></p>
+          <h3 data-i18n="safety.5.title">Police and CBI calls get a straight answer</h3>
+          <p data-i18n="safety.5.body">There is no such thing as a “digital arrest”. Saathi says so, tells the parent to hang up, and reads out 1930 if money already went.</p>
         </div>
         <div>
-          <h3><span class="t" lang="en">In the family's own language</span><span class="t" lang="hi">परिवार की अपनी भाषा में</span></h3>
-          <p><span class="t" lang="en">Saathi listens and speaks in 12 languages through Sarvam, chosen when the family registers. In Hindi the same agents also run on Deepgram and Cartesia, so drills measure which is faster and more accurate.</span><span class="t" lang="hi">साथी Sarvam के ज़रिए 12 भाषाओं में सुनती और बोलती है, जो परिवार जुड़ते समय चुनता है। हिंदी में यही एजेंट Deepgram और Cartesia पर भी चलते हैं, ताकि अभ्यास में देखा जा सके कि कौन तेज़ और सटीक है।</span></p>
+          <h3 data-i18n="safety.6.title">In the family's own language</h3>
+          <p data-i18n="safety.6.body">Saathi listens and speaks in 12 languages through Sarvam, chosen when the family registers. In Hindi the same agents also run on Deepgram and Cartesia, so drills measure which is faster and more accurate.</p>
         </div>
       </div>
     </section>
 
     <section class="section" id="languages" aria-labelledby="languages-title">
-      <h2 id="languages-title"><span class="t" lang="en">Saathi speaks the family's language</span><span class="t" lang="hi">साथी परिवार की भाषा बोलती है</span></h2>
-      <p><span class="t" lang="en">Twelve languages, picked when the family registers. Every call opens in that language, and every fixed safety line is written and voiced in each one.</span><span class="t" lang="hi">बारह भाषाएँ, जो परिवार जुड़ते समय चुनता है। हर कॉल उसी भाषा में शुरू होता है, और हर तय सुरक्षा संदेश हर भाषा में लिखा और रिकॉर्ड किया गया है।</span></p>
+      <h2 id="languages-title" data-i18n="langs.title">Saathi speaks the family's language</h2>
+      <p data-i18n="langs.body">Twelve languages, picked when the family registers. Every call opens in that language, and every fixed safety line is written and voiced in each one.</p>
       <div class="languages">
         <div class="field">
-          <label for="lang-choice"><span class="t" lang="en">Pick a language</span><span class="t" lang="hi">भाषा चुनिए</span></label>
+          <label for="lang-choice" data-i18n="langs.pick">Pick a language</label>
           <select id="lang-choice"></select>
         </div>
         <figure class="say-box">
-          <figcaption class="voice"><span class="t" lang="en">What Saathi says when the call was fake</span><span class="t" lang="hi">कॉल नकली होने पर साथी क्या कहती है</span></figcaption>
+          <figcaption class="voice" data-i18n="langs.caption">What Saathi says when the call was fake</figcaption>
           <p class="say" id="lang-line" aria-live="polite"></p>
           <p class="voice" id="lang-voice"></p>
         </figure>
@@ -177,40 +199,34 @@
     </section>
 
     <section class="section" id="families" aria-labelledby="families-title">
-      <h2 id="families-title"><span class="t" lang="en">For families</span><span class="t" lang="hi">परिवारों के लिए</span></h2>
+      <h2 id="families-title" data-i18n="families.title">For families</h2>
       <div class="families">
         <div>
-          <p><span class="t" lang="en">A son or daughter sets it up once for their parent.</span><span class="t" lang="hi">बेटा या बेटी अपने माता-पिता के लिए एक बार इसे सेट करते हैं।</span></p>
+          <p data-i18n="families.body">A son or daughter sets it up once for their parent.</p>
           <ol>
-            <li><span class="t" lang="en">Register the parent, one or two family members to call, and a family word.</span><span class="t" lang="hi">माता-पिता, कॉल करने के लिए एक या दो परिवार वाले, और एक परिवार का शब्द जोड़िए।</span></li>
-            <li><span class="t" lang="en">Open the button link on the parent's phone and add it to the home screen.</span><span class="t" lang="hi">माता-पिता के फ़ोन पर बटन वाला लिंक खोलिए और होम स्क्रीन पर जोड़िए।</span></li>
-            <li><span class="t" lang="en">Tell them: before paying anyone who calls asking for money, press the yellow button.</span><span class="t" lang="hi">उन्हें बताइए: पैसे माँगने वाले किसी को भी देने से पहले, पीला बटन दबाइए।</span></li>
+            <li data-i18n="families.1">Register the parent, one or two family members to call, and a family word.</li>
+            <li data-i18n="families.2">Open the button link on the parent's phone and add it to the home screen.</li>
+            <li data-i18n="families.3">Tell them: before paying anyone who calls asking for money, press the yellow button.</li>
           </ol>
           <div class="actions">
-            <a class="button primary" href="signup.html"><span class="t" lang="en">Register your family</span><span class="t" lang="hi">अपना परिवार जोड़िए</span></a>
-            <a class="button secondary" href="tap.html?demo=1"><span class="t" lang="en">Try the button</span><span class="t" lang="hi">बटन आज़माइए</span></a>
+            <a class="button primary" href="signup.html" data-i18n="cta.register">Register your family</a>
+            <a class="button secondary" href="tap.html?demo=1" data-i18n="cta.try">Try the button</a>
           </div>
         </div>
         <figure class="mini-seal">
           <span class="disc" lang="hi" aria-hidden="true">दबाइए</span>
-          <figcaption><span class="t" lang="en">What the parent sees: one large button, in Hindi.</span><span class="t" lang="hi">माता-पिता को यही दिखता है: हिंदी में एक बड़ा बटन।</span></figcaption>
+          <figcaption data-i18n="families.caption">What the parent sees: one large button, in their own language.</figcaption>
         </figure>
       </div>
     </section>
   </main>
 
   <footer class="site-foot">
-    <p>
-      <span class="t" lang="en">Already paid a scammer? Call <a href="tel:1930"><strong>1930</strong></a> or report it at <a href="https://cybercrime.gov.in">cybercrime.gov.in</a> right away.</span>
-      <span class="t" lang="hi">ठगी में पैसे चले गए? तुरंत <a href="tel:1930"><strong>1930</strong></a> पर कॉल कीजिए या <a href="https://cybercrime.gov.in">cybercrime.gov.in</a> पर शिकायत कीजिए।</span>
-    </p>
-    <p>
-      <span class="t" lang="en">Asli hai? is a Bolna Buildathon project. The code is on <a href="https://github.com/Deveshu04/Asli-Hai-">GitHub</a>.</span>
-      <span class="t" lang="hi">असली है? Bolna Buildathon का प्रोजेक्ट है। कोड <a href="https://github.com/Deveshu04/Asli-Hai-">GitHub</a> पर है।</span>
-    </p>
+    <p data-i18n-html="foot.helpline">Already paid a scammer? Call <a href="tel:1930"><strong>1930</strong></a> or report it at <a href="https://cybercrime.gov.in">cybercrime.gov.in</a> right away.</p>
+    <p data-i18n-html="foot.about">Asli hai? is a Bolna Buildathon project. The code is on <a href="https://github.com/Deveshu04/Asli-Hai-">GitHub</a>.</p>
   </footer>
 
-  <script src="site.js"></script>
-  <script src="demo.js"></script>
+  <script src="site.js?v=3"></script>
+  <script src="demo.js?v=3"></script>
 </body>
 </html>
