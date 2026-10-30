@@ -24,15 +24,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body class="tap">
   <header class="bar">
     <span class="mark" id="brand" lang="hi">असली है?</span>
     <div class="prefs">
-      <label class="lang-pick">
+      <div class="lang-pick">
         <span id="lang-label"></span>
-        <select data-lang-select>
+        <select data-lang-select aria-labelledby="lang-label">
           <option value="hi" lang="hi">हिंदी</option>
           <option value="en" lang="en">English</option>
           <option value="hi-Latn" lang="hi-Latn">Hinglish</option>
@@ -47,7 +47,7 @@
           <option value="od" lang="or">ଓଡ଼ିଆ</option>
           <option value="as" lang="as">অসমীয়া</option>
         </select>
-      </label>
+      </div>
       <button type="button" class="pref" data-text-size aria-pressed="false" id="size">A+</button>
     </div>
   </header>
@@ -61,7 +61,7 @@
 
   <footer class="helpline"><span id="helpline"></span> <a href="tel:1930">1930</a></footer>
 
-  <script src="site.js?v=5"></script>
+  <script src="site.js?v=6"></script>
   <script>
     const BRAND = { hi: "असली है?", en: "Asli hai?", "hi-Latn": "Asli hai?", bn: "আসলি হ্যায়?", mr: "असली है?", te: "అస్లీ హై?", ta: "அஸ்லி ஹை?", gu: "અસલી હૈ?", kn: "ಅಸ್ಲಿ ಹೈ?", ml: "അസ്‌ലി ഹൈ?", pa: "ਅਸਲੀ ਹੈ?", od: "ଅସଲି ହୈ?", as: "অসলী হৈ?" };
     const COPY = {

@@ -259,6 +259,8 @@
       option.value = v.code;
       option.lang = htmlLang(v.code);
       option.textContent = v.code === page ? v.native : `${v.native} (${t("lang." + v.code)})`;
+      option.dataset.native = v.native;
+      option.dataset.local = v.code === page ? "" : t("lang." + v.code);
       return option;
     }));
     select.value = current;
