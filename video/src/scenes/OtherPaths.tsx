@@ -4,10 +4,18 @@ import { C, F } from "../lib/theme";
 import { type Bubble, CallScreen } from "../ui/CallScreen";
 import { Chapter, Rise, Stage, Wipe } from "../ui/Overlays";
 import { Phone, PHONE_W } from "../ui/Phone";
+import type { Cue } from "../ui/Soundtrack";
 
-export const BEAT = 210;
+export const BEAT = 240;
 const GENUINE = 360;
 export const OTHER_PATHS_FRAMES = GENUINE + BEAT * 4;
+export const OTHER_PATHS_VO: readonly Cue[] = [
+  { id: "other_n1", at: 15 },
+  { id: "other_n2", at: GENUINE + 10 },
+  { id: "other_n3", at: GENUINE + BEAT + 8 },
+  { id: "other_n4", at: GENUINE + BEAT * 2 + 10 },
+  { id: "other_n5", at: GENUINE + BEAT * 3 + 10 },
+];
 
 const S = COPY.saathi;
 const L = COPY.lines;

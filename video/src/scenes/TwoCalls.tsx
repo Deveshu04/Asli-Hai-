@@ -6,8 +6,9 @@ import { CallScreen } from "../ui/CallScreen";
 import { Caption, Chapter, EventLog, Stage } from "../ui/Overlays";
 import { Phone, PHONE_W } from "../ui/Phone";
 import { Sfx } from "../ui/Sfx";
+import type { Cue } from "../ui/Soundtrack";
 
-export const TWO_CALLS_FRAMES = 1500;
+export const TWO_CALLS_FRAMES = 1560;
 
 const MOM_X = 110;
 const SON_X = 1920 - 110 - PHONE_W;
@@ -16,6 +17,17 @@ const LINE_Y = 392;
 // The film opens this scene six seconds after the tap, while both phones are already ringing.
 const T0 = 6;
 const VERDICT = 780;
+export const TWO_CALLS_VO: readonly Cue[] = [
+  { id: "two_n1", at: 12 },
+  { id: "two_n2", at: 225 },
+  { id: "two_n3", at: 445 },
+  { id: "two_n4", at: 620 },
+  { id: "two_n5", at: VERDICT + 20 },
+  { id: "two_n6", at: 1025 },
+  { id: "two_n7", at: 1170 },
+  { id: "two_rahul", at: 1300 },
+  { id: "two_sunita", at: 1437 },
+];
 
 const L = COPY.lines;
 const S = COPY.saathi;
@@ -90,10 +102,10 @@ export const TwoCalls: React.FC = () => {
             sub="बेटा"
             avatar="र"
             connectedAt={1290}
-            speaking={frame >= 1300 && frame < 1370 ? "them" : frame >= 1380 && frame < 1430 ? "me" : null}
+            speaking={frame >= 1300 && frame < 1430 ? "them" : frame >= 1437 && frame < 1490 ? "me" : null}
             bubbles={[
               { at: 1300, who: "them", text: "माँ, मैं बिल्कुल ठीक हूँ। वो कॉल मेरा नहीं था।", en: "Ma, I'm completely fine. That call wasn't me." },
-              { at: 1380, who: "me", text: "भगवान का शुक्र है।", en: "Thank God." },
+              { at: 1437, who: "me", text: "भगवान का शुक्र है।", en: "Thank God." },
             ]}
           />
         ) : momAnswered ? (
@@ -126,10 +138,10 @@ export const TwoCalls: React.FC = () => {
             sub="Ma"
             avatar="म"
             connectedAt={1290}
-            speaking={frame >= 1300 && frame < 1370 ? "me" : frame >= 1380 && frame < 1430 ? "them" : null}
+            speaking={frame >= 1300 && frame < 1430 ? "me" : frame >= 1437 && frame < 1490 ? "them" : null}
             bubbles={[
               { at: 1300, who: "me", text: "माँ, मैं बिल्कुल ठीक हूँ। वो कॉल मेरा नहीं था।", en: "Ma, I'm completely fine. That call wasn't me." },
-              { at: 1380, who: "them", text: "भगवान का शुक्र है।", en: "Thank God." },
+              { at: 1437, who: "them", text: "भगवान का शुक्र है।", en: "Thank God." },
             ]}
           />
         ) : sonCallsBack ? (
@@ -162,7 +174,7 @@ export const TwoCalls: React.FC = () => {
         { from: 620, to: 770, text: "Rahul says he never called." },
         { from: 780, to: 1010, text: "The verdict lands in Sunita's call, word for word, in about 30 seconds." },
         { from: 1020, to: 1160, text: "Rahul is asked to call her too." },
-        { from: 1170, to: 1490, text: "So he does. The scammer gets nothing." },
+        { from: 1170, to: 1545, text: "So he does. The scammer gets nothing." },
       ].map((c) => (
         <Caption key={c.from} frame={frame} from={c.from} to={c.to} style={{ left: 610, width: 700, top: 820, textAlign: "center" }}>
           {c.text}

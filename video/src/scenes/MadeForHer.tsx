@@ -7,6 +7,7 @@ import { Phone } from "../ui/Phone";
 import { SignupScreen, type SignupStep } from "../ui/Screens";
 import { Sfx } from "../ui/Sfx";
 import { TapScreen } from "../ui/TapScreen";
+import type { Cue } from "../ui/Soundtrack";
 
 // Beats, in scene frames: one button, languages, larger text, screen readers, the family's signup.
 const A = 0;
@@ -15,6 +16,13 @@ const CC = 720;
 const D = 1000;
 const E = 1320;
 export const MADE_FOR_HER_FRAMES = 1860;
+export const MADE_FOR_HER_VO: readonly Cue[] = [
+  { id: "mfh_n1", at: A + 15 },
+  { id: "mfh_n2", at: B + 15 },
+  { id: "mfh_n3", at: CC + 15 },
+  { id: "mfh_n4", at: D + 15 },
+  { id: "mfh_n5", at: E + 15 },
+];
 
 const PX = 300;
 const PY = 100;

@@ -1,8 +1,14 @@
 import { useCurrentFrame } from "remotion";
 import { C, F } from "../lib/theme";
 import { Chapter, Rise, Stage, Wipe } from "../ui/Overlays";
+import type { Cue } from "../ui/Soundtrack";
 
-export const TRUST_FRAMES = 540;
+export const TRUST_FRAMES = 600;
+export const TRUST_VO: readonly Cue[] = [
+  { id: "trust_n1", at: 8 },
+  { id: "trust_n2", at: 85 },
+  { id: "trust_n3", at: 375 },
+];
 
 const CARDS = [
   { at: 40, title: "The family word stays secret.", text: "Stored only as a keyed hash. Never in a prompt, a log line or a message.", code: "HMAC-SHA256(normalize(word))" },

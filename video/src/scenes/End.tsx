@@ -2,9 +2,14 @@ import { interpolate, useCurrentFrame } from "remotion";
 import { CLAMP, OUT, ramp } from "../lib/anim";
 import { C, F } from "../lib/theme";
 import { Chapter, Rise, Stage, Wipe } from "../ui/Overlays";
+import type { Cue } from "../ui/Soundtrack";
 
 export const END_FRAMES = 450;
 const CARD_AT = 240;
+export const END_VO: readonly Cue[] = [
+  { id: "end_n1", at: 10 },
+  { id: "end_n2", at: CARD_AT + 30 },
+];
 
 const NODES = [
   { at: 20, title: "Parent's phone", sub: "one tap" },

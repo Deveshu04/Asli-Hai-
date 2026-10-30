@@ -6,8 +6,13 @@ import { Phone } from "../ui/Phone";
 import { HomeScreen } from "../ui/Screens";
 import { Sfx } from "../ui/Sfx";
 import { TapScreen } from "../ui/TapScreen";
+import type { Cue } from "../ui/Soundtrack";
 
 export const PRESS_FRAMES = 540;
+export const PRESS_VO: readonly Cue[] = [
+  { id: "press_n1", at: 20 },
+  { id: "press_n2", at: 270 },
+];
 
 // Phone at left 420, top 100: the screen's top-left corner sits at (434, 168) on the stage.
 const SX = 434;
@@ -60,7 +65,7 @@ export const Press: React.FC = () => {
       <Rise frame={frame} at={112} style={{ ...body, top: 320 }}>
         Sunita opens the button her son added to her home screen and presses it. Nothing to read, nothing to fill in.
       </Rise>
-      <Rise frame={frame} at={200} style={{ ...body, top: 530, fontWeight: 600 }}>
+      <Rise frame={frame} at={265} style={{ ...body, top: 530, fontWeight: 600 }}>
         Two calls start at the same moment: <span style={{ background: C.sealTint, padding: "0 8px" }}>Saathi calls Sunita</span>, and her son Rahul gets a rescue call.
       </Rise>
       <EventLog
