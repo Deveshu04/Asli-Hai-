@@ -2,6 +2,12 @@
 
 One tap before a parent pays. A voice agent calls the real family member, checks the family word, and tells the parent "safe, don't pay" while they wait on the line.
 
+**See it with no setup**
+
+- [The live site](https://asli-hai.onrender.com/web/). Its simulator plays a whole check, both calls side by side, in any of the 12 languages. It runs on a free server, so the first load can take up to a minute while it wakes up.
+- [The parent's button](https://asli-hai.onrender.com/web/tap.html?demo=1) in demo mode, which never places a call.
+- To get real calls on your own phones, follow [Run it on your own Bolna account](#run-it-on-your-own-bolna-account). It takes about 15 minutes.
+
 ## The problem
 
 Parents over 55 whose children live in another city get calls like "Papa, accident ho gaya, paise bhejo" or "CBI se bol raha hoon". The scam works in the two minutes between that call and the transfer. Asli hai? is built for those two minutes.
@@ -132,18 +138,63 @@ The same graph runs on two stacks, so accuracy on Hindi names and seconds to ver
 | `POST /webhooks/bolna` | Bolna | Moves to the next contact on no answer; sends the summary when the call ends |
 | `GET /lookup` | Bolna inbound | Identifies a parent calling in, once there is an inbound number |
 
-## Run locally
+## Run it on your own Bolna account
 
-```bash
-pip install -r requirements.txt
-cp .env.example .env    # fill BOLNA_API_KEY, TOOL_SECRET, PUBLIC_BASE_URL
-python -m uvicorn backend.app:app --port 8000
-```
+Real calls need a Bolna account and two phones. Nothing in the repo is tied to the author's account: your key and your agents are used throughout.
 
-`TOOL_SECRET` is any long random string. The agents send it with every tool call, so only they can reach the tool endpoints. Bolna must reach the backend over HTTPS, so put the backend behind a tunnel or host it, and set `PUBLIC_BASE_URL` to that address.
+1. **Set up Bolna.**
+   - Sign up at [platform.bolna.ai](https://platform.bolna.ai), copy your API key, and add some credit.
+   - A trial account only rings verified numbers, so verify both phones you'll use, the parent's and the family member's, in the Bolna dashboard.
+   - The rescue call needs 2 calls at once. If your account allows only 1, set `RESCUE_CALLS=off` in `.env`.
+2. **Install.**
 
-- Register a family at `/web/signup.html`. The page returns the parent's `tap.html?f=...` link.
-- Open that link on the parent's phone and add it to the home screen.
+   ```bash
+   git clone https://github.com/Deveshu04/Asli-Hai-.git
+   cd Asli-Hai-
+   pip install -r requirements.txt
+   cp .env.example .env
+   ```
+
+3. **Fill in `.env`.**
+   - Put your key in `BOLNA_API_KEY`.
+   - `TOOL_SECRET` is any long random string. The agents send it with every tool call, so only they can reach the tool endpoints. You can generate one with:
+
+     ```bash
+     python -c "import secrets; print(secrets.token_urlsafe(32))"
+     ```
+
+4. **Start the backend.**
+
+   ```bash
+   python -m uvicorn backend.app:app --port 8000
+   ```
+
+5. **Give it a public HTTPS address.** Bolna's agents reach the backend from the internet. A free Cloudflare quick tunnel needs no account:
+
+   ```bash
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+   Put the `https://….trycloudflare.com` address it prints into `PUBLIC_BASE_URL`. The address changes each time the tunnel restarts; when it does, repeat step 6. To keep one address, [deploy on Render](#deploy-on-render) instead.
+6. **Create the agents in your account.**
+
+   ```bash
+   python scripts/push_agents.py
+   ```
+
+   This creates the four agents, points them at your `PUBLIC_BASE_URL`, and writes their ids into `.env`. Restart the backend so it reads them.
+7. **Register a family.** Open `<PUBLIC_BASE_URL>/web/signup.html` and use your two verified phones. The parent and the first family member must be on different handsets: a second SIM in the phone you're talking on shows up as busy.
+8. **Press the button.** Open the parent's link from the last signup screen, press it, and answer both phones. Things to try:
+   - **A family claim:** "Rahul called, he's had an accident and needs ₹15,000", using your family member's name. The family member is checked on the rescue call, and the verdict reaches the parent's call.
+   - **An official claim:** "Someone from CBI says I'm under digital arrest." Saathi gives the fixed warning, and the family member hears what happened.
+   - **A parent who drops out:** hang up on Saathi early, or don't answer her. The family member is told to call the parent.
+   - **A retry:** after "couldn't confirm", ask Saathi to call the family again.
+
+**Optional extras:**
+
+- `SIGNUP_CODE` locks signup to people you give the code to.
+- The [family summary](#family-summary) on WhatsApp.
+- The guardrail audit: add the disposition in `agents/extractions/guardrail_breach.json` to your agents in the Bolna dashboard, and every transcript is checked against Saathi's rules after the call.
 
 ## Deploy on Render
 
