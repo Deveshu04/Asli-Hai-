@@ -1,6 +1,6 @@
 # The Asli hai? demo film
 
-A 3 minute 20 second film of the product, made with [Remotion](https://www.remotion.dev). It's a "living UI" film: the real screens are rebuilt in React with the site's own palette and fonts, so the camera can move through them and the buttons can be pressed on screen. Every line on screen is the product's own wording, copied from `web/`, `agents/` and `backend/languages.py`.
+A 3 minute 32 second film of the product, made with [Remotion](https://www.remotion.dev). It's a "living UI" film: the real screens are rebuilt in React with the site's own palette and fonts, so the camera can move through them and the buttons can be pressed on screen. Every line on screen is the product's own wording, copied from `web/`, `agents/` and `backend/languages.py`.
 
 The rendered film is in [`media/asli-hai-demo.mp4`](../media/asli-hai-demo.mp4).
 

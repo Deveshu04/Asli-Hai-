@@ -6,7 +6,8 @@ import { Chapter, Rise, Stage, Wipe } from "../ui/Overlays";
 import { Phone, PHONE_W } from "../ui/Phone";
 
 export const BEAT = 210;
-export const OTHER_PATHS_FRAMES = BEAT * 4;
+const GENUINE = 360;
+export const OTHER_PATHS_FRAMES = GENUINE + BEAT * 4;
 
 const S = COPY.saathi;
 const L = COPY.lines;
@@ -75,7 +76,30 @@ export const OtherPaths: React.FC = () => {
   return (
     <Stage>
       <Chapter frame={frame} n="03" title="Every other path" />
-      <Sequence name="Police or CBI" durationInFrames={BEAT} premountFor={fps}>
+      <Sequence name="Really him" durationInFrames={GENUINE} premountFor={fps}>
+        <PathBeat
+          title="Really him?"
+          sub="Rahul says yes and gives the family word. The backend checks it, then Saathi tells her it's real."
+          mom={[
+            { at: 12, who: "me", text: "राहुल बोल रहा है कि उसका बटुआ खो गया, ₹5,000 चाहिए।", en: "Rahul says he's lost his wallet and needs ₹5,000." },
+            {
+              at: 220,
+              who: "them",
+              tone: "ok",
+              tag: "Event · child_confirmed",
+              text: "राहुल ने ख़ुद पुष्टि की है और फ़ैमिली वर्ड भी सही बताया। यह कॉल असली है। पैसे सिर्फ़ उसी खाते में भेजिए जो राहुल ख़ुद बताए, और पहले उनके सेव किए नंबर पर वापस कॉल कर लीजिए।",
+              en: "Rahul confirmed it himself and gave the family word. This call is real. Pay only into the account Rahul gives you, after calling him back on his saved number.",
+            },
+          ]}
+          son={[
+            { at: 30, who: "them", tag: "Story arrives · event", text: L.hi.verify, en: L.en.verify },
+            { at: 100, who: "me", text: "हाँ, वो मैं ही था।", en: "Yes, that was me." },
+            { at: 140, who: "them", text: "ठीक है। कृपया फ़ैमिली वर्ड बताइए।", en: "All right. Please say the family word." },
+            { at: 178, who: "me", tag: "Only the backend checks it", text: "● ● ● ● ●", en: "(family word hidden)" },
+          ]}
+        />
+      </Sequence>
+      <Sequence name="Police or CBI" from={GENUINE} durationInFrames={BEAT} premountFor={fps}>
         <PathBeat
           title="Police or CBI?"
           sub="Saathi plays the fixed warning, and Rahul hears what happened straight away."
@@ -89,7 +113,7 @@ export const OtherPaths: React.FC = () => {
           ]}
         />
       </Sequence>
-      <Sequence name="Money already sent" from={BEAT} durationInFrames={BEAT} premountFor={fps}>
+      <Sequence name="Money already sent" from={GENUINE + BEAT} durationInFrames={BEAT} premountFor={fps}>
         <PathBeat
           title="Money already sent?"
           sub="1930, the cybercrime helpline, right away. Rahul is told to call her."
@@ -100,7 +124,7 @@ export const OtherPaths: React.FC = () => {
           son={[{ at: 96, who: "them", tag: "Story arrives · event", text: L.hi.update_paid, en: L.en.update_paid }]}
         />
       </Sequence>
-      <Sequence name="Can't take the call" from={BEAT * 2} durationInFrames={BEAT} premountFor={fps}>
+      <Sequence name="Can't take the call" from={GENUINE + BEAT * 2} durationInFrames={BEAT} premountFor={fps}>
         <PathBeat
           title="Still on the scam call?"
           sub="If she can't take Saathi's call, Rahul is told to call her himself."
@@ -115,7 +139,7 @@ export const OtherPaths: React.FC = () => {
           ]}
         />
       </Sequence>
-      <Sequence name="Couldn't confirm" from={BEAT * 3} durationInFrames={BEAT} premountFor={fps}>
+      <Sequence name="Couldn't confirm" from={GENUINE + BEAT * 3} durationInFrames={BEAT} premountFor={fps}>
         <PathBeat
           title="Couldn't reach the family?"
           sub="She can ask Saathi to call them again, and Saathi does."
