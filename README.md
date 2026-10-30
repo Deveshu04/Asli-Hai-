@@ -2,6 +2,10 @@
 
 One tap before a parent pays. A voice agent calls the real family member, checks the family word, and tells the parent "safe, don't pay" while they wait on the line.
 
+[![The parent presses the one button, and Saathi and her son are called at the same moment](media/asli-hai-teaser.gif)](media/asli-hai-demo.mp4)
+
+**[Watch the demo film](media/asli-hai-demo.mp4)** (3 min 20 s). It shows the real screens, both calls side by side with what the backend does at each step, and every accessibility setting.
+
 **See it with no setup**
 
 - [The live site](https://asli-hai.onrender.com/web/). Its simulator plays a whole check, both calls side by side, in any of the 12 languages. It runs on a free server, so the first load can take up to a minute while it wakes up.
@@ -126,6 +130,8 @@ The same graph runs on two stacks, so accuracy on Hindi names and seconds to ver
 | `backend/` | FastAPI and SQLite. Places the calls, decides the verdict, fires it into the live call, sends the summary |
 | `web/` | `index.html` is the home page with a check simulator; `signup.html` registers a family through a one-question-per-screen questionnaire; `tap.html` is the parent's one-tap button (`?demo=1` shows it without placing a call) |
 | `scripts/` | `push_agents.py` creates or updates the agents, `summary_workflow.py` builds the WhatsApp workflow, `new_session.py` runs a timed test session |
+| `video/` | The demo film, made with Remotion from the product's own screens and wording. See [`video/README.md`](video/README.md) |
+| `media/` | The rendered film and the teaser GIF |
 
 ### Backend endpoints
 
