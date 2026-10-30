@@ -10,7 +10,7 @@ One tap before a parent pays. A voice agent calls the real family member, checks
 
 - [The live site](https://asli-hai.onrender.com/web/). Its simulator plays a whole check, both calls side by side, in any of the 12 languages. It runs on a free server, so the first load can take up to a minute while it wakes up.
 - [The parent's button](https://asli-hai.onrender.com/web/tap.html?demo=1) in demo mode, which never places a call.
-- To get real calls on your own phones, follow [Run it on your own Bolna account](#run-it-on-your-own-bolna-account). It takes about 15 minutes.
+- To get real calls on your own phones, follow [Run it on your own Bolna account](#run-it-on-your-own-bolna-account). It takes about 15 minutes. On a Bolna trial account, verify both phone numbers first; see [Troubleshooting](#troubleshooting).
 
 ## The problem
 
@@ -201,6 +201,18 @@ Real calls need a Bolna account and two phones. Nothing in the repo is tied to t
 - `SIGNUP_CODE` locks signup to people you give the code to.
 - The [family summary](#family-summary) on WhatsApp.
 - The guardrail audit: add the disposition in `agents/extractions/guardrail_breach.json` to your agents in the Bolna dashboard, and every transcript is checked against Saathi's rules after the call.
+
+## Troubleshooting
+
+| What you see | Why | What to do |
+| --- | --- | --- |
+| No phone rings, and the call shows as failed in Bolna's Call History | A Bolna **trial account only calls verified numbers** | Before the first press, verify every number you'll use (the parent and each family member) in the Bolna dashboard. Do this first, even if you plan to add credit later. |
+| The family member's phone comes back as busy | The parent and family member are on the same handset (two SIMs) | Use two separate phones. |
+| Saathi calls the parent but the family member never rings | Your account allows only one call at a time | Ask Bolna to raise concurrency to 2, or set `RESCUE_CALLS=off` so the family is called only after Saathi hears the story. |
+| The tap page says the call didn't go through | The backend can't place calls | Check `BOLNA_API_KEY` and the `AGENT_ID_*` values in `.env`, and restart the backend after `push_agents.py`. |
+| Saathi talks, but the family is never called and no verdict arrives | Bolna can't reach your tools | `PUBLIC_BASE_URL` must be the backend's current HTTPS address. Quick tunnels change on restart; re-run `python scripts/push_agents.py` after each change. |
+| Signup says the invite code isn't valid | `SIGNUP_CODE` is set in `.env` | Enter that code on the signup page, or leave `SIGNUP_CODE` empty. |
+| The live site takes a while to open | The free server sleeps when idle | Wait up to a minute for the first load. |
 
 ## Deploy on Render
 
